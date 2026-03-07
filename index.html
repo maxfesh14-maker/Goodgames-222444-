@@ -10,15 +10,13 @@
         body { font-family: 'Segoe UI', sans-serif; background: #0b0b0b; color: white; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; overflow: hidden; }
         .card { background: #1a1a1a; padding: 30px; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.8); width: 320px; text-align: center; border: 1px solid #333; transition: 0.5s; z-index: 10; position: relative; }
         h2 { color: #00f2fe; margin-bottom: 25px; text-transform: uppercase; letter-spacing: 2px; }
-        
         .input-group { position: relative; width: 100%; margin: 10px 0; }
-        input { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #333; background: #222; color: white; box-sizing: border-box; outline: none; padding-right: 40px; }
+        input { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #333; background: #222; color: white; box-sizing: border-box; outline: none; padding-right: 45px; font-size: 16px; }
         input:focus { border-color: #00f2fe; }
         
-        /* КНОПКА ГЛАЗИК */
-        .toggle-password { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #888; font-size: 18px; user-select: none; }
-        .toggle-password:hover { color: #00f2fe; }
-
+        /* ГЛАЗИК */
+        .eye-btn { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #888; font-size: 20px; user-select: none; z-index: 15; }
+        
         button { width: 100%; padding: 13px; background: linear-gradient(45deg, #00f2fe, #4facfe); color: black; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; margin-top: 15px; transition: 0.3s; font-size: 16px; }
         button:hover { transform: scale(1.03); filter: brightness(1.1); }
         .toggle-link { margin-top: 20px; font-size: 0.9em; color: #888; cursor: pointer; text-decoration: underline; }
@@ -35,7 +33,7 @@
     </div>
     <div class="input-group">
         <input type="password" id="passField" placeholder="Пароль">
-        <span class="toggle-password" onclick="togglePassVis()">👁️</span>
+        <span class="eye-btn" onclick="togglePassVis()">👁️</span>
     </div>
     <button id="actionBtn" onclick="handleAuth()">Войти</button>
     <div class="toggle-link" id="switchBtn" onclick="toggleForm()">Регистрация</div>
@@ -58,16 +56,12 @@
     const db = firebase.database();
     let isLogin = true;
 
-    // Функция переключения видимости пароля
     function togglePassVis() {
         const pField = document.getElementById('passField');
-        const eye = document.querySelector('.toggle-password');
         if (pField.type === "password") {
             pField.type = "text";
-            eye.innerText = "🔒"; // Меняем значок на замок, когда пароль открыт
         } else {
             pField.type = "password";
-            eye.innerText = "👁️"; // Обратно на глаз
         }
     }
 
@@ -80,25 +74,27 @@
         isLogin = !isLogin;
         document.getElementById('titleText').innerText = isLogin ? "GoodGames" : "Регистрация";
         document.getElementById('actionBtn').innerText = isLogin ? "Войти" : "Создать профиль";
-        document.getElementById('switchBtn').innerText = isLogin ? "Нет аккаунта? Регистрация" : "Уже есть аккаунт? Войти";
+        document.getElementById('switchBtn').innerText = isLogin ? "Регистрация" : "Войти";
     }
 
     function handleAuth() {
         const u = document.getElementById('loginField').value.trim();
         const p = document.getElementById('passField').value.trim();
 
+        // Пасхалки
         if (p === '') {
             const secret = u.toLowerCase();
             if (secret === 'кот') {
                 document.getElementById('catOverlay').style.display = 'block';
                 document.getElementById('authCard').style.opacity = '0';
-                history.pushState({page: 'cat'}, 'Cat', '#cat');
+                history.pushState({p:'c'}, '', '#cat');
                 return;
             }
             if (secret === 'google') { window.location.href = "https://www.google.com"; return; }
         }
 
-        if (!u || !p) return alert("Заполни поля!");
+        if (!u || !p) { alert("Заполни поля!"); return; }
+
         const userRef = db.ref('users/' + u);
 
         if (isLogin) {
@@ -106,14 +102,14 @@
                 if (snapshot.exists()) {
                     const dbPass = snapshot.val().password.toString().trim();
                     if (dbPass === p) alert("Успешный вход!");
-                    else alert("Ошибка: Неверный пароль!");
+                    else alert("Неверный пароль!");
                 } else {
                     alert("Пользователь не найден!");
                 }
             });
         } else {
             userRef.set({password: p, role: "user"}).then(() => {
-                alert("Аккаунт создан!");
+                alert("Создано!");
                 toggleForm();
             });
         }

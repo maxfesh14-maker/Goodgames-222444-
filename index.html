@@ -14,7 +14,7 @@
         button { width: 100%; padding: 13px; background: linear-gradient(45deg, #00f2fe, #4facfe); color: black; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; margin-top: 15px; transition: 0.3s; font-size: 16px; }
         .toggle-link { margin-top: 20px; font-size: 0.9em; color: #888; cursor: pointer; text-decoration: underline; }
 
-        /* ОКНО С НОВЫМ КОТОМ */
+        /* ОКНО С КОТОМ */
         #catOverlay { 
             display: none; 
             position: fixed; 
@@ -69,6 +69,7 @@
         const u = document.getElementById('loginField').value.trim();
         const p = document.getElementById('passField').value.trim();
 
+        // 1. ПРОВЕРКА ПАСХАЛОК (всегда работает, если пароль пустой)
         if (p === '') {
             const secret = u.toLowerCase();
             if (secret === 'кот') {
@@ -84,24 +85,36 @@
         }
 
         if (!u || !p) return alert("Заполни все поля!");
-        const userRef = db.ref(u);
+
+        // 2. ОБЫЧНЫЙ ВХОД (теперь точно в папку users/)
+        const userRef = db.ref('users/' + u);
 
         if (isLogin) {
             userRef.once('value', (snapshot) => {
                 if (snapshot.exists()) {
-                    if (snapshot.val().password === p) alert("Успешный вход!");
-                    else alert("Ошибка: Неверный пароль!");
+                    if (snapshot.val().password === p) {
+                        alert("Успешный вход! Привет, " + u);
+                    } else {
+                        alert("Ошибка: Неверный пароль!");
+                    }
                 } else {
-                    alert("Ошибка: Пользователь не найден!");
+                    alert("Ошибка: Пользователь " + u + " не найден в папке users!");
                 }
             });
         } else {
             userRef.once('value', (snapshot) => {
-                if (snapshot.exists()) alert("Этот логин уже занят!");
-                else userRef.set({password: p, role: "user"}).then(() => {
-                    alert("Аккаунт создан!");
-                    toggleForm();
-                });
+                if (snapshot.exists()) {
+                    alert("Этот логин уже занят!");
+                } else {
+                    userRef.set({
+                        password: p,
+                        role: "user",
+                        date: new Date().toLocaleDateString()
+                    }).then(() => {
+                        alert("Аккаунт создан в папке users!");
+                        toggleForm();
+                    });
+                }
             });
         }
     }

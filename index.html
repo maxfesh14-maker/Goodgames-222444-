@@ -8,20 +8,26 @@
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #0b0b0b; color: white; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; overflow: hidden; }
-        .card { background: #1a1a1a; padding: 30px; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.8); width: 320px; text-align: center; border: 1px solid #333; transition: 0.5s; z-index: 10; position: relative; }
+        .card { background: #1a1a1a; padding: 30px; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.8); width: 320px; text-align: center; border: 1px solid #333; z-index: 10; position: relative; }
         h2 { color: #00f2fe; margin-bottom: 25px; text-transform: uppercase; letter-spacing: 2px; }
+        
         .input-group { position: relative; width: 100%; margin: 10px 0; }
-        input { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #333; background: #222; color: white; box-sizing: border-box; outline: none; padding-right: 45px; font-size: 16px; }
-        input:focus { border-color: #00f2fe; }
+        input { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #333; background: #222; color: white; box-sizing: border-box; outline: none; padding-right: 45px; }
         
         /* ГЛАЗИК */
-        .eye-btn { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #888; font-size: 20px; user-select: none; z-index: 15; }
+        .eye-icon { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; user-select: none; font-size: 18px; color: #888; }
+
+        button { width: 100%; padding: 13px; background: linear-gradient(45deg, #00f2fe, #4facfe); color: black; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; margin-top: 15px; transition: 0.3s; }
+        button:active { transform: scale(0.98); }
         
-        button { width: 100%; padding: 13px; background: linear-gradient(45deg, #00f2fe, #4facfe); color: black; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; margin-top: 15px; transition: 0.3s; font-size: 16px; }
-        button:hover { transform: scale(1.03); filter: brightness(1.1); }
         .toggle-link { margin-top: 20px; font-size: 0.9em; color: #888; cursor: pointer; text-decoration: underline; }
-        
-        #catOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9) url('https://media.giphy.com/media/GeimqsH0TLDt4tScGw/giphy.gif') no-repeat center center; background-size: contain; z-index: 1000; }
+
+        /* ОКНО С КОТОМ (ОБНОВЛЕННЫЙ GIF) */
+        #catOverlay { 
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.95) url('https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExOHp1eXp2Z3R4Y25xdWp3Z3J6eG5xdWp3Z3J6eG5xdWp3Z3J6eG5xdSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/GeimqsH0TLDt4tScGw/giphy.gif') no-repeat center center; 
+            background-size: contain; z-index: 1000; 
+        }
     </style>
 </head>
 <body>
@@ -33,7 +39,7 @@
     </div>
     <div class="input-group">
         <input type="password" id="passField" placeholder="Пароль">
-        <span class="eye-btn" onclick="togglePassVis()">👁️</span>
+        <span class="eye-icon" onclick="togglePass()">👁️</span>
     </div>
     <button id="actionBtn" onclick="handleAuth()">Войти</button>
     <div class="toggle-link" id="switchBtn" onclick="toggleForm()">Регистрация</div>
@@ -42,6 +48,7 @@
 <div id="catOverlay"></div>
 
 <script>
+    // Твои настройки Firebase (проверь их в консоли Firebase)
     const firebaseConfig = {
         apiKey: "AIzaSyAs-LhYl2vXF7S_Ym9S8V4j0Z1W2E3R4T5",
         authDomain: "goodgames-222444.firebaseapp.com",
@@ -56,15 +63,13 @@
     const db = firebase.database();
     let isLogin = true;
 
-    function togglePassVis() {
+    // Функция глазика
+    function togglePass() {
         const pField = document.getElementById('passField');
-        if (pField.type === "password") {
-            pField.type = "text";
-        } else {
-            pField.type = "password";
-        }
+        pField.type = (pField.type === "password") ? "text" : "password";
     }
 
+    // Закрытие кота
     window.onpopstate = function() {
         document.getElementById('catOverlay').style.display = 'none';
         document.getElementById('authCard').style.opacity = '1';
@@ -81,7 +86,7 @@
         const u = document.getElementById('loginField').value.trim();
         const p = document.getElementById('passField').value.trim();
 
-        // Пасхалки
+        // 1. Проверка секретных слов (если пароль пустой)
         if (p === '') {
             const secret = u.toLowerCase();
             if (secret === 'кот') {
@@ -90,26 +95,35 @@
                 history.pushState({p:'c'}, '', '#cat');
                 return;
             }
-            if (secret === 'google') { window.location.href = "https://www.google.com"; return; }
+            if (secret === 'google') {
+                window.location.href = "https://www.google.com";
+                return;
+            }
         }
 
-        if (!u || !p) { alert("Заполни поля!"); return; }
+        // 2. Обычный вход
+        if (!u || !p) return alert("Заполни поля!");
 
         const userRef = db.ref('users/' + u);
 
         if (isLogin) {
-            userRef.once('value', (snapshot) => {
+            userRef.once('value').then((snapshot) => {
                 if (snapshot.exists()) {
                     const dbPass = snapshot.val().password.toString().trim();
-                    if (dbPass === p) alert("Успешный вход!");
-                    else alert("Неверный пароль!");
+                    if (dbPass === p) {
+                        alert("Успешный вход!");
+                    } else {
+                        alert("Неверный пароль!");
+                    }
                 } else {
-                    alert("Пользователь не найден!");
+                    alert("Пользователь не найден в папке users!");
                 }
+            }).catch((error) => {
+                alert("Ошибка базы данных: " + error.message);
             });
         } else {
             userRef.set({password: p, role: "user"}).then(() => {
-                alert("Создано!");
+                alert("Аккаунт создан!");
                 toggleForm();
             });
         }

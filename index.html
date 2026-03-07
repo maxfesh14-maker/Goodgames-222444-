@@ -10,41 +10,40 @@
         body { font-family: 'Segoe UI', sans-serif; background: #0b0b0b; color: white; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; overflow: hidden; }
         .card { background: #1a1a1a; padding: 30px; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.8); width: 320px; text-align: center; border: 1px solid #333; transition: 0.5s; z-index: 10; position: relative; }
         h2 { color: #00f2fe; margin-bottom: 25px; text-transform: uppercase; letter-spacing: 2px; }
-        input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 10px; border: 1px solid #333; background: #222; color: white; box-sizing: border-box; outline: none; }
+        
+        .input-group { position: relative; width: 100%; margin: 10px 0; }
+        input { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #333; background: #222; color: white; box-sizing: border-box; outline: none; padding-right: 40px; }
         input:focus { border-color: #00f2fe; }
+        
+        /* КНОПКА ГЛАЗИК */
+        .toggle-password { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #888; font-size: 18px; user-select: none; }
+        .toggle-password:hover { color: #00f2fe; }
+
         button { width: 100%; padding: 13px; background: linear-gradient(45deg, #00f2fe, #4facfe); color: black; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; margin-top: 15px; transition: 0.3s; font-size: 16px; }
         button:hover { transform: scale(1.03); filter: brightness(1.1); }
         .toggle-link { margin-top: 20px; font-size: 0.9em; color: #888; cursor: pointer; text-decoration: underline; }
-        .toggle-link:hover { color: #00f2fe; }
-        .footer-link { margin-top: 15px; display: block; color: #444; text-decoration: none; font-size: 0.7em; }
-
-        /* ОКНО С ТАНЦУЮЩИМ КОТОМ */
-        #catOverlay { 
-            display: none; 
-            position: fixed; 
-            top: 0; left: 0; 
-            width: 100%; height: 100%; 
-            background: rgba(0,0,0,0.9) url('https://media.giphy.com/media/GeimqsH0TLDt4tScGw/giphy.gif') no-repeat center center; 
-            background-size: contain; 
-            z-index: 1000; 
-        }
+        
+        #catOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9) url('https://media.giphy.com/media/GeimqsH0TLDt4tScGw/giphy.gif') no-repeat center center; background-size: contain; z-index: 1000; }
     </style>
 </head>
 <body>
 
 <div class="card" id="authCard">
     <h2 id="titleText">GoodGames</h2>
-    <input type="text" id="loginField" placeholder="Логин">
-    <input type="password" id="passField" placeholder="Пароль">
+    <div class="input-group">
+        <input type="text" id="loginField" placeholder="Логин">
+    </div>
+    <div class="input-group">
+        <input type="password" id="passField" placeholder="Пароль">
+        <span class="toggle-password" onclick="togglePassVis()">👁️</span>
+    </div>
     <button id="actionBtn" onclick="handleAuth()">Войти</button>
-    <div class="toggle-link" id="switchBtn" onclick="toggleForm()">Нет аккаунта? Регистрация</div>
-    <a href="https://good-games-portal.ru" class="footer-link">Good Games Portal</a>
+    <div class="toggle-link" id="switchBtn" onclick="toggleForm()">Регистрация</div>
 </div>
 
 <div id="catOverlay"></div>
 
 <script>
-    // ТВОИ НАСТРОЙКИ FIREBASE
     const firebaseConfig = {
         apiKey: "AIzaSyAs-LhYl2vXF7S_Ym9S8V4j0Z1W2E3R4T5",
         authDomain: "goodgames-222444.firebaseapp.com",
@@ -59,7 +58,19 @@
     const db = firebase.database();
     let isLogin = true;
 
-    // Закрытие пасхалки кнопкой "Назад"
+    // Функция переключения видимости пароля
+    function togglePassVis() {
+        const pField = document.getElementById('passField');
+        const eye = document.querySelector('.toggle-password');
+        if (pField.type === "password") {
+            pField.type = "text";
+            eye.innerText = "🔒"; // Меняем значок на замок, когда пароль открыт
+        } else {
+            pField.type = "password";
+            eye.innerText = "👁️"; // Обратно на глаз
+        }
+    }
+
     window.onpopstate = function() {
         document.getElementById('catOverlay').style.display = 'none';
         document.getElementById('authCard').style.opacity = '1';
@@ -76,7 +87,6 @@
         const u = document.getElementById('loginField').value.trim();
         const p = document.getElementById('passField').value.trim();
 
-        // 1. СЕКРЕТНЫЕ ПАСХАЛКИ (пароль должен быть ПУСТЫМ)
         if (p === '') {
             const secret = u.toLowerCase();
             if (secret === 'кот') {
@@ -85,56 +95,30 @@
                 history.pushState({page: 'cat'}, 'Cat', '#cat');
                 return;
             }
-            if (secret === 'google') {
-                window.location.href = "https://www.google.com";
-                return;
-            }
+            if (secret === 'google') { window.location.href = "https://www.google.com"; return; }
         }
 
-        // 2. ОБЫЧНАЯ АВТОРИЗАЦИЯ
-        if (!u || !p) return alert("Заполни все поля!");
-
+        if (!u || !p) return alert("Заполни поля!");
         const userRef = db.ref('users/' + u);
 
         if (isLogin) {
             userRef.once('value', (snapshot) => {
                 if (snapshot.exists()) {
-                    const data = snapshot.val();
-                    // Превращаем пароль из базы в строку и убираем пробелы
-                    const dbPass = data.password ? data.password.toString().trim() : "";
-                    
-                    if (dbPass === p) {
-                        alert("Успешный вход! Рады видеть тебя, " + u);
-                        // Тут можно добавить переход: window.location.href = "main.html";
-                    } else {
-                        // Показываем, что именно не совпало (для отладки)
-                        alert("Ошибка: Неверный пароль!");
-                    }
+                    const dbPass = snapshot.val().password.toString().trim();
+                    if (dbPass === p) alert("Успешный вход!");
+                    else alert("Ошибка: Неверный пароль!");
                 } else {
-                    alert("Ошибка: Пользователь " + u + " не найден в папке users!");
+                    alert("Пользователь не найден!");
                 }
             });
         } else {
-            // РЕГИСТРАЦИЯ
-            userRef.once('value', (snapshot) => {
-                if (snapshot.exists()) {
-                    alert("Этот логин уже занят!");
-                } else {
-                    userRef.set({
-                        password: p,
-                        role: "user",
-                        date: new Date().toLocaleDateString()
-                    }).then(() => {
-                        alert("Аккаунт успешно создан! Теперь войдите.");
-                        toggleForm();
-                    });
-                }
+            userRef.set({password: p, role: "user"}).then(() => {
+                alert("Аккаунт создан!");
+                toggleForm();
             });
         }
     }
-    // Подготовка истории для кнопки Назад
     history.pushState(null, null, window.location.href);
 </script>
-
 </body>
 </html>

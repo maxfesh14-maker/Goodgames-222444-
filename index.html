@@ -2,110 +2,141 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>GoodGames Portal</title>
-    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #0b0b0b; color: white; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; overflow: hidden; }
-        .card { background: #1a1a1a; padding: 30px; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.8); width: 320px; text-align: center; border: 1px solid #333; z-index: 10; position: relative; }
-        h2 { color: #00f2fe; margin-bottom: 25px; text-transform: uppercase; letter-spacing: 2px; }
-        .input-group { position: relative; width: 100%; margin: 10px 0; }
-        input { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #333; background: #222; color: white; box-sizing: border-box; outline: none; padding-right: 45px; }
-        .eye-icon { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #888; user-select: none; }
-        button { width: 100%; padding: 13px; background: linear-gradient(45deg, #00f2fe, #4facfe); color: black; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; margin-top: 15px; transition: 0.3s; }
-        .toggle-link { margin-top: 20px; font-size: 0.9em; color: #888; cursor: pointer; text-decoration: underline; }
-        #catOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95) url('https://media.giphy.com/media/GeimqsH0TLDt4tScGw/giphy.gif') no-repeat center center; background-size: contain; z-index: 1000; }
+        :root { --main: #FBC02D; --bg: #0b0b0b; --card: #161616; --text: #ffffff; --vip: #E040FB; --err: #ff4444; }
+        * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background: var(--bg); color: var(--text); margin: 0; display: flex; height: 100vh; overflow: hidden; flex-direction: row; }
+        
+        /* Экран входа */
+        #auth-screen { position: fixed; inset: 0; background: var(--bg); z-index: 10000; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .auth-card { background: var(--card); padding: 30px; border-radius: 25px; width: 100%; max-width: 340px; text-align: center; border: 1px solid #333; }
+        
+        /* Боковая панель */
+        .sidebar { width: 260px; background: #000; padding: 20px; border-right: 1px solid #222; display: flex; flex-direction: column; z-index: 100; }
+        .content { flex: 1; padding: 20px; overflow-y: auto; padding-bottom: 80px; }
+        
+        input { width: 100%; padding: 12px; margin: 8px 0; border-radius: 10px; border: 1px solid #333; background: #000; color: #fff; outline: none; }
+        .btn { background: var(--main); color: #000; border: none; padding: 14px; border-radius: 12px; font-weight: bold; cursor: pointer; width: 100%; text-align: center; display: block; transition: 0.2s; text-decoration: none; }
+        .nav-btn { padding: 12px; color: #888; cursor: pointer; border-radius: 10px; margin-bottom: 5px; text-align: center; font-weight: bold; border: none; background: transparent; width: 100%; }
+        .nav-btn.active { background: var(--main); color: #000; }
+        
+        .game-card { background: var(--card); border-radius: 18px; padding: 18px; margin-bottom: 20px; border: 1px solid #222; }
+        .vip-card { border: 2px solid var(--vip); }
+        .tag { display: inline-block; background: #333; color: #aaa; padding: 4px 8px; border-radius: 6px; font-size: 10px; margin-bottom: 10px; font-weight: bold; }
+        
+        .hidden { display: none !important; }
+
+        @media (max-width: 768px) {
+            body { flex-direction: column; }
+            .sidebar { width: 100%; height: 70px; border-top: 1px solid #222; position: fixed; bottom: 0; left: 0; flex-direction: row; justify-content: space-around; padding: 5px; }
+            .sidebar h2, .u-info { display: none; }
+            .nav-btn { margin-bottom: 0; flex: 1; font-size: 12px; }
+        }
     </style>
 </head>
 <body>
 
-<div class="card" id="authCard">
-    <h2 id="titleText">GoodGames</h2>
-    <div class="input-group">
-        <input type="text" id="loginField" placeholder="Логин">
+<div id="auth-screen">
+    <div class="auth-card">
+        <h2 style="color:var(--main); margin-top:0;">GoodGames</h2>
+        <input type="text" id="lName" placeholder="Логин">
+        <input type="password" id="lPass" placeholder="Пароль">
+        <button class="btn" onclick="doLogin()">ВОЙТИ</button>
     </div>
-    <div class="input-group">
-        <input type="password" id="passField" placeholder="Пароль">
-        <span class="eye-icon" onclick="togglePass()">👁️</span>
-    </div>
-    <button onclick="handleAuth()">Войти</button>
-    <div class="toggle-link" id="switchBtn" onclick="toggleForm()">Регистрация</div>
 </div>
 
-<div id="catOverlay"></div>
+<div class="sidebar">
+    <h2 style="color:var(--main); text-align:center;">PORTAL</h2>
+    <div id="u-info" style="text-align:center; margin-bottom:15px; background:#111; padding:10px; border-radius:10px;"></div>
+    <button id="btn-list" class="nav-btn active" onclick="showP('list')">🎮 ИГРЫ</button>
+    <button id="nav-add" class="nav-btn hidden" onclick="showP('add')">➕ СОЗДАТЬ</button>
+    <div style="flex:1"></div>
+    <button class="nav-btn" onclick="location.reload()" style="color:var(--err)">🚪 ВЫХОД</button>
+</div>
+
+<div class="content">
+    <div id="p-list"><h1>Игротека</h1><div id="games"></div></div>
+    <div id="p-add" class="hidden">
+        <h1>➕ Новая игра</h1>
+        <div class="game-card">
+            <input type="text" id="gT" placeholder="Название">
+            <input type="text" id="gL" placeholder="Ссылка">
+            <button class="btn" onclick="addGame()">ОПУБЛИКОВАТЬ</button>
+        </div>
+    </div>
+</div>
 
 <script>
-    const firebaseConfig = {
-        apiKey: "AIzaSyAs-LhYl2vXF7S_Ym9S8V4j0Z1W2E3R4T5",
-        authDomain: "goodgames-222444.firebaseapp.com",
-        databaseURL: "https://goodgames-222444-default-rtdb.firebaseio.com",
-        projectId: "goodgames-222444",
-        storageBucket: "goodgames-222444.appspot.com",
-        messagingSenderId: "555123456789",
-        appId: "1:555123456789:web:abcdef123456789"
+    const firebaseConfig = { 
+        apiKey: "AIzaSyCD1HEwz_NsJDasETxc6X4IdCJ6_WFj-LA", 
+        databaseURL: "https://goodgames-222444-default-rtdb.firebaseio.com", 
+        projectId: "goodgames-222444" 
     };
-
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-    let isLogin = true;
+    
+    let user = null;
 
-    function togglePass() {
-        const pField = document.getElementById('passField');
-        pField.type = pField.type === "password" ? "text" : "password";
-    }
-
-    function toggleForm() {
-        isLogin = !isLogin;
-        document.getElementById('titleText').innerText = isLogin ? "GoodGames" : "Регистрация";
-        document.getElementById('switchBtn').innerText = isLogin ? "Регистрация" : "Войти";
-    }
-
-    function handleAuth() {
-        const u = document.getElementById('loginField').value.trim();
-        const p = document.getElementById('passField').value.trim();
-
-        if (p === '') {
-            const secret = u.toLowerCase();
-            if (secret === 'кот') {
-                document.getElementById('catOverlay').style.display = 'block';
-                document.getElementById('authCard').style.display = 'none';
-                return;
-            }
-            if (secret === 'google') { window.location.href = "https://www.google.com"; return; }
-        }
-
-        if (!u || !p) return alert("Заполни поля!");
-
-        const userPath = 'users/' + u;
+    function doLogin() {
+        const typedName = document.getElementById('lName').value.trim();
+        const typedPass = document.getElementById('lPass').value.trim();
         
-        if (isLogin) {
-            db.ref(userPath).once('value', (snapshot) => {
-                if (snapshot.exists()) {
-                    const val = snapshot.val();
-                    // ПРОВЕРКА: есть ли вообще пароль в этой папке?
-                    if (val && val.password) {
-                        const dbPass = val.password.toString().trim();
-                        if (dbPass === p) {
-                            alert("Успешно! Привет, " + u);
-                        } else {
-                            alert("Неверный пароль!");
-                        }
-                    } else {
-                        alert("Ошибка: У пользователя " + u + " в базе нет пароля!");
-                    }
-                } else {
-                    alert("Логин не найден в папке users!");
-                }
-            }, (error) => {
-                alert("Ошибка базы: " + error.message);
+        if(!typedName || !typedPass) return alert("Заполни поля!");
+
+        // Программа идет именно в ту папку, имя которой ты ввел (Admin, Maxim и т.д.)
+        db.ref('users/' + typedName).once('value', s => {
+            const data = s.val();
+            if(!data) return alert("Пользователь '" + typedName + "' не найден!");
+
+            // Сверяем пароль именно из этой папки (поле 'pass')
+            if(data.pass && data.pass.toString() === typedPass) {
+                user = data;
+                user.id = typedName; 
+                document.getElementById('auth-screen').classList.add('hidden');
+                initPortal();
+            } else {
+                alert("Неверный пароль!");
+            }
+        });
+    }
+
+    function initPortal() {
+        document.getElementById('u-info').innerHTML = `<b>${user.id}</b> ${user.vip?'👑':''}`;
+        if(user.verified || user.id === 'Admin') document.getElementById('nav-add').classList.remove('hidden');
+        loadGames();
+    }
+
+    function showP(p) {
+        document.getElementById('p-list').classList.toggle('hidden', p !== 'list');
+        document.getElementById('p-add').classList.toggle('hidden', p !== 'add');
+    }
+
+    function loadGames() {
+        db.ref('games').on('value', s => {
+            const div = document.getElementById('games'); div.innerHTML = '';
+            if(s.val()) Object.values(s.val()).reverse().forEach(g => {
+                const can = !g.vipGame || user.vip || user.verified || user.id === 'Admin';
+                div.innerHTML += `
+                    <div class="game-card ${g.vipGame?'vip-card':''}">
+                        <h3 style="margin:5px 0;">${g.title}</h3>
+                        <p style="font-size:10px; color:#555;">Автор: ${g.author}</p>
+                        ${can ? `<a href="${g.link}" target="_blank" class="btn">ИГРАТЬ</a>` : `<div class="btn" style="background:#222;color:#555">🔒 VIP ONLY</div>`}
+                    </div>`;
             });
-        } else {
-            db.ref(userPath).set({password: p}).then(() => {
-                alert("Создано!");
-                toggleForm();
-            });
-        }
+        });
+    }
+
+    function addGame() {
+        db.ref('games').push({
+            title: document.getElementById('gT').value,
+            link: document.getElementById('gL').value,
+            author: user.id
+        });
+        showP('list');
     }
 </script>
 </body>

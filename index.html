@@ -7,7 +7,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
-        :root { --main: #FBC02D; --bg: #0b0b0b; --card: #161616; --text: #ffffff; --vip: #E040FB; --err: #ff4444; }
+        :root { --main: #00f2fe; --bg: #0b0b0b; --card: #161616; --text: #ffffff; --vip: #E040FB; --err: #ff4444; }
         * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; -webkit-tap-highlight-color: transparent; }
         body { background: var(--bg); color: var(--text); margin: 0; display: flex; height: 100vh; overflow: hidden; flex-direction: row; }
         
@@ -21,6 +21,8 @@
         
         input { width: 100%; padding: 12px; margin: 8px 0; border-radius: 10px; border: 1px solid #333; background: #000; color: #fff; outline: none; }
         .btn { background: var(--main); color: #000; border: none; padding: 14px; border-radius: 12px; font-weight: bold; cursor: pointer; width: 100%; text-align: center; display: block; transition: 0.2s; text-decoration: none; }
+        .btn:active { transform: scale(0.95); }
+        
         .nav-btn { padding: 12px; color: #888; cursor: pointer; border-radius: 10px; margin-bottom: 5px; text-align: center; font-weight: bold; border: none; background: transparent; width: 100%; }
         .nav-btn.active { background: var(--main); color: #000; }
         
@@ -71,6 +73,7 @@
 </div>
 
 <script>
+    // Твои настройки Firebase
     const firebaseConfig = { 
         apiKey: "AIzaSyCD1HEwz_NsJDasETxc6X4IdCJ6_WFj-LA", 
         databaseURL: "https://goodgames-222444-default-rtdb.firebaseio.com", 
@@ -85,57 +88,88 @@
         const typedName = document.getElementById('lName').value.trim();
         const typedPass = document.getElementById('lPass').value.trim();
         
-        if(!typedName || !typedPass) return alert("Заполни поля!");
+        if(!typedName || !typedPass) return alert("Заполни все поля!");
 
-        // Программа идет именно в ту папку, имя которой ты ввел (Admin, Maxim и т.д.)
+        // Идем в users/логин
         db.ref('users/' + typedName).once('value', s => {
             const data = s.val();
-            if(!data) return alert("Пользователь '" + typedName + "' не найден!");
-
-            // Сверяем пароль именно из этой папки (поле 'pass')
-            if(data.pass && data.pass.toString() === typedPass) {
-                user = data;
-                user.id = typedName; 
-                document.getElementById('auth-screen').classList.add('hidden');
-                initPortal();
-            } else {
-                alert("Неверный пароль!");
+            
+            // Если такой папки нет в базе
+            if(!data) {
+                return alert("Пользователь не найден!");
             }
-        });
+            
+            // ПРОВЕРКА ПАРОЛЯ (защищенная)
+            try {
+                const dbPass = data.pass ? data.pass.toString() : "";
+                
+                if(dbPass === typedPass) {
+                    user = data;
+                    user.id = typedName; 
+                    document.getElementById('auth-screen').classList.add('hidden');
+                    initPortal();
+                } else {
+                    alert("Неверный пароль!");
+                }
+            } catch (e) {
+                alert("Ошибка при чтении пароля. Проверь базу данных!");
+            }
+        }).catch(err => alert("Ошибка подключения к базе!"));
     }
 
     function initPortal() {
-        document.getElementById('u-info').innerHTML = `<b>${user.id}</b> ${user.vip?'👑':''}`;
-        if(user.verified || user.id === 'Admin') document.getElementById('nav-add').classList.remove('hidden');
+        const info = document.getElementById('u-info');
+        info.innerHTML = `<b>${user.id}</b> ${user.vip?'👑':''}`;
+        
+        // Показываем кнопку "Создать", если пользователь Admin или верифицирован
+        if(user.verified || user.id.toLowerCase() === 'admin') {
+            document.getElementById('nav-add').classList.remove('hidden');
+        }
         loadGames();
     }
 
     function showP(p) {
         document.getElementById('p-list').classList.toggle('hidden', p !== 'list');
         document.getElementById('p-add').classList.toggle('hidden', p !== 'add');
+        document.getElementById('btn-list').classList.toggle('active', p === 'list');
+        const addBtn = document.getElementById('nav-add');
+        if(addBtn) addBtn.classList.toggle('active', p === 'add');
     }
 
     function loadGames() {
         db.ref('games').on('value', s => {
-            const div = document.getElementById('games'); div.innerHTML = '';
-            if(s.val()) Object.values(s.val()).reverse().forEach(g => {
-                const can = !g.vipGame || user.vip || user.verified || user.id === 'Admin';
-                div.innerHTML += `
-                    <div class="game-card ${g.vipGame?'vip-card':''}">
-                        <h3 style="margin:5px 0;">${g.title}</h3>
-                        <p style="font-size:10px; color:#555;">Автор: ${g.author}</p>
-                        ${can ? `<a href="${g.link}" target="_blank" class="btn">ИГРАТЬ</a>` : `<div class="btn" style="background:#222;color:#555">🔒 VIP ONLY</div>`}
-                    </div>`;
-            });
+            const div = document.getElementById('games');
+            div.innerHTML = '';
+            const allGames = s.val();
+            if(allGames) {
+                Object.values(allGames).reverse().forEach(g => {
+                    // Проверка доступа
+                    const isAdmin = user.id.toLowerCase() === 'admin';
+                    const canPlay = !g.vipGame || user.vip || user.verified || isAdmin;
+                    
+                    div.innerHTML += `
+                        <div class="game-card ${g.vipGame?'vip-card':''}">
+                            <h3 style="margin:5px 0;">${g.title}</h3>
+                            <p style="font-size:10px; color:#555;">Автор: ${g.author || 'Неизвестен'}</p>
+                            ${canPlay ? `<a href="${g.link}" target="_blank" class="btn">ИГРАТЬ</a>` : `<div class="btn" style="background:#222;color:#555">🔒 VIP ONLY</div>`}
+                        </div>`;
+                });
+            }
         });
     }
 
     function addGame() {
+        const t = document.getElementById('gT').value;
+        let l = document.getElementById('gL').value;
+        if(!t || !l) return alert("Заполни данные!");
+        if(!l.startsWith('http')) l = 'https://' + l;
+
         db.ref('games').push({
-            title: document.getElementById('gT').value,
-            link: document.getElementById('gL').value,
+            title: t,
+            link: l,
             author: user.id
         });
+        alert("Игра добавлена!");
         showP('list');
     }
 </script>

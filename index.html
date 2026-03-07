@@ -36,7 +36,6 @@
 <div id="catOverlay"></div>
 
 <script>
-    // ТВОИ НАСТРОЙКИ (AIzaSy...)
     const firebaseConfig = {
         apiKey: "AIzaSyAs-LhYl2vXF7S_Ym9S8V4j0Z1W2E3R4T5",
         authDomain: "goodgames-222444.firebaseapp.com",
@@ -66,7 +65,6 @@
         const u = document.getElementById('loginField').value.trim();
         const p = document.getElementById('passField').value.trim();
 
-        // 1. СЕКРЕТНЫЕ СЛОВА
         if (p === '') {
             const secret = u.toLowerCase();
             if (secret === 'кот') {
@@ -74,10 +72,7 @@
                 document.getElementById('authCard').style.display = 'none';
                 return;
             }
-            if (secret === 'google') {
-                window.location.href = "https://www.google.com";
-                return;
-            }
+            if (secret === 'google') { window.location.href = "https://www.google.com"; return; }
         }
 
         if (!u || !p) return alert("Заполни поля!");
@@ -87,21 +82,27 @@
         if (isLogin) {
             db.ref(userPath).once('value', (snapshot) => {
                 if (snapshot.exists()) {
-                    const dbPass = snapshot.val().password.toString().trim();
-                    if (dbPass === p) {
-                        alert("Успешно! Привет, " + u);
+                    const val = snapshot.val();
+                    // ПРОВЕРКА: есть ли вообще пароль в этой папке?
+                    if (val && val.password) {
+                        const dbPass = val.password.toString().trim();
+                        if (dbPass === p) {
+                            alert("Успешно! Привет, " + u);
+                        } else {
+                            alert("Неверный пароль!");
+                        }
                     } else {
-                        alert("Неверный пароль!");
+                        alert("Ошибка: У пользователя " + u + " в базе нет пароля!");
                     }
                 } else {
-                    alert("Логин не найден!");
+                    alert("Логин не найден в папке users!");
                 }
             }, (error) => {
                 alert("Ошибка базы: " + error.message);
             });
         } else {
             db.ref(userPath).set({password: p}).then(() => {
-                alert("Аккаунт создан!");
+                alert("Создано!");
                 toggleForm();
             });
         }

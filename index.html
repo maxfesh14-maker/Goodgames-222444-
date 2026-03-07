@@ -2,91 +2,32 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GoodGames Portal</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
-        :root { --main: #FBC02D; --bg: #0b0b0b; --card: #161616; --text: #ffffff; --vip: #E040FB; --err: #ff4444; }
-        * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; -webkit-tap-highlight-color: transparent; }
-        body { background: var(--bg); color: var(--text); margin: 0; display: flex; height: 100vh; overflow: hidden; flex-direction: row; }
-        
-        /* Экран тех. неисправности */
-        #maintenance-screen { position: fixed; inset: 0; background: var(--bg); z-index: 20000; display: flex; align-items: center; justify-content: center; text-align: center; padding: 20px; }
-        
-        #auth-screen { position: fixed; inset: 0; background: var(--bg); z-index: 10000; display: flex; align-items: center; justify-content: center; padding: 20px; }
-        .auth-card { background: var(--card); padding: 30px; border-radius: 25px; width: 100%; max-width: 340px; text-align: center; border: 1px solid #333; }
-        
-        .sidebar { width: 260px; background: #000; padding: 20px; border-right: 1px solid #222; display: flex; flex-direction: column; z-index: 100; }
-        .content { flex: 1; padding: 20px; overflow-y: auto; padding-bottom: 80px; }
-        
-        input { width: 100%; padding: 12px; margin: 8px 0; border-radius: 10px; border: 1px solid #333; background: #000; color: #fff; outline: none; }
-        .btn { background: var(--main); color: #000; border: none; padding: 14px; border-radius: 12px; font-weight: bold; cursor: pointer; width: 100%; text-decoration: none; display: block; text-align: center; transition: 0.2s; }
-        .nav-btn { padding: 12px; color: #888; cursor: pointer; border-radius: 10px; margin-bottom: 5px; text-align: center; font-weight: bold; border: none; background: transparent; width: 100%; }
-        .nav-btn.active { background: var(--main); color: #000; }
-        
-        .game-card { background: var(--card); border-radius: 18px; padding: 18px; margin-bottom: 20px; border: 1px solid #222; }
+        :root { --main: #FBC02D; --bg: #0b0b0b; --card: #161616; --text: #ffffff; --err: #ff4444; }
+        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; }
+        #maintenance-screen { position: fixed; inset: 0; background: var(--bg); z-index: 10000; display: flex; align-items: center; justify-content: center; text-align: center; padding: 20px; }
+        .content { padding: 20px; display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
+        .game-card { background: var(--card); padding: 20px; border-radius: 20px; border: 1px solid #222; text-align: center; }
+        .btn { background: var(--main); color: #000; padding: 10px; border-radius: 10px; text-decoration: none; display: block; font-weight: bold; margin-top: 10px; }
         .hidden { display: none !important; }
-
-        @media (max-width: 768px) {
-            body { flex-direction: column; }
-            .sidebar { width: 100%; height: 70px; border-top: 1px solid #222; position: fixed; bottom: 0; left: 0; flex-direction: row; justify-content: space-around; padding: 5px; }
-            .sidebar h2, .u-info { display: none; }
-            .nav-btn { margin-bottom: 0; flex: 1; font-size: 12px; }
-        }
     </style>
 </head>
 <body>
 
 <div id="maintenance-screen" class="hidden">
     <div>
-        <h1 style="color:var(--err); font-size: 60px; margin-bottom: 10px;">⚠️</h1>
-        <h2 style="color:var(--text);">Техническая неисправность</h2>
-        <p style="color:#888; font-size: 18px;">Пожалуйста, попробуйте позже, мы скоро вернёмся!</p>
+        <h1 style="font-size: 60px;">⚠️</h1>
+        <h2>Техническая неисправность</h2>
+        <p>Пожалуйста, попробуйте позже, мы скоро вернёмся!</p>
     </div>
 </div>
 
-<div id="auth-screen">
-    <div class="auth-card">
-        <h2 style="color:var(--main); margin-top:0;">GoodGames</h2>
-        <input type="text" id="lName" placeholder="Логин">
-        <input type="password" id="lPass" placeholder="Пароль">
-        <button class="btn" onclick="doLogin()">ВОЙТИ</button>
-    </div>
-</div>
-
-<div class="sidebar">
-    <h2 style="color:var(--main); text-align:center; margin-bottom:15px;">PORTAL</h2>
-    <div id="u-info" style="text-align:center; margin-bottom:15px; background:#111; padding:10px; border-radius:10px;"></div>
-    <button id="btn-list" class="nav-btn active" onclick="showP('list')">🎮 ИГРЫ</button>
-    <button id="nav-add" class="nav-btn hidden" onclick="showP('add')">➕ СОЗДАТЬ</button>
-    <button id="nav-admin" class="nav-btn hidden" onclick="showP('admin')" style="color:var(--main)">⚙️ АДМИН</button>
-    <div style="flex:1"></div>
-    <button class="nav-btn" onclick="location.reload()" style="color:var(--err)">🚪 ВЫХОД</button>
-</div>
-
-<div class="content">
-    <div id="p-list"><h1>Игротека</h1><div id="games"></div></div>
-    
-    <div id="p-add" class="hidden">
-        <h1>➕ Новая игра</h1>
-        <div class="game-card">
-            <input type="text" id="gT" placeholder="Название">
-            <input type="text" id="gL" placeholder="Ссылка">
-            <button class="btn" onclick="addGame()">ОПУБЛИКОВАТЬ</button>
-        </div>
-    </div>
-
-    <div id="p-admin" class="hidden">
-        <h1>⚙️ Панель управления</h1>
-        <div class="game-card">
-            <h3>Состояние портала</h3>
-            <p id="status-text">Портал работает в обычном режиме</p>
-            <button id="maint-btn" class="btn" style="background:var(--err); color:white;" onclick="toggleMaint(true)">ВКЛЮЧИТЬ ОШИБКУ</button>
-            <button id="maint-off-btn" class="btn hidden" style="background:#444; color:white;" onclick="toggleMaint(false)">ВЫКЛЮЧИТЬ ОШИБКУ</button>
-        </div>
-    </div>
-</div>
+<h1 style="text-align: center; color: var(--main);">🎮 GOODGAMES PORTAL</h1>
+<div class="content" id="games-list"></div>
 
 <script>
     const firebaseConfig = { 
@@ -96,85 +37,24 @@
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-    
-    let user = null;
 
-    // СЛУШАТЕЛЬ СОСТОЯНИЯ (ТЕХ. НЕИСПРАВНОСТЬ)
+    // Слушаем режим ошибки
     db.ref('settings/maintenance').on('value', s => {
-        const isMaint = s.val();
-        const screen = document.getElementById('maintenance-screen');
-        const mBtnOn = document.getElementById('maint-btn');
-        const mBtnOff = document.getElementById('maint-off-btn');
-        const statusTxt = document.getElementById('status-text');
-
-        if (isMaint) {
-            if(mBtnOn) mBtnOn.classList.add('hidden');
-            if(mBtnOff) mBtnOff.classList.remove('hidden');
-            if(statusTxt) statusTxt.innerText = "ВКЛЮЧЕН РЕЖИМ НЕИСПРАВНОСТИ";
-            
-            // Если НЕ админ — блокируем сайт
-            if (!user || user.id.toLowerCase() !== 'admin') {
-                screen.classList.remove('hidden');
-            }
+        if (s.val() === true) {
+            document.getElementById('maintenance-screen').classList.remove('hidden');
         } else {
-            if(mBtnOn) mBtnOn.classList.remove('hidden');
-            if(mBtnOff) mBtnOff.classList.add('hidden');
-            if(statusTxt) statusTxt.innerText = "Портал работает в обычном режиме";
-            screen.classList.add('hidden');
+            document.getElementById('maintenance-screen').classList.add('hidden');
         }
     });
 
-    function doLogin() {
-        const n = document.getElementById('lName').value.trim();
-        const p = document.getElementById('lPass').value.trim();
-        if(!n || !p) return alert("Заполни поля!");
-
-        db.ref('users/' + n).once('value', s => {
-            const data = s.val();
-            if(!data) return alert("Пользователь не найден!");
-            if(data.pass && data.pass.toString() === p) {
-                user = data; user.id = n;
-                document.getElementById('auth-screen').classList.add('hidden');
-                initPortal();
-            } else { alert("Неверный пароль!"); }
+    // Загрузка игр
+    db.ref('games').on('value', s => {
+        const div = document.getElementById('games-list');
+        div.innerHTML = '';
+        if(s.val()) Object.values(s.val()).reverse().forEach(g => {
+            div.innerHTML += `<div class="game-card"><h3>${g.title}</h3><a href="${g.link}" target="_blank" class="btn">ИГРАТЬ</a></div>`;
         });
-    }
-
-    function initPortal() {
-        document.getElementById('u-info').innerHTML = `<b>${user.id}</b>`;
-        if(user.id.toLowerCase() === 'admin' || user.verified) {
-            document.getElementById('nav-add').classList.remove('hidden');
-        }
-        if(user.id.toLowerCase() === 'admin') {
-            document.getElementById('nav-admin').classList.remove('hidden');
-        }
-        loadGames();
-    }
-
-    function toggleMaint(val) {
-        db.ref('settings').update({maintenance: val});
-    }
-
-    function showP(p) {
-        document.getElementById('p-list').classList.toggle('hidden', p !== 'list');
-        document.getElementById('p-add').classList.toggle('hidden', p !== 'add');
-        document.getElementById('p-admin').classList.toggle('hidden', p !== 'admin');
-        document.getElementById('btn-list').classList.toggle('active', p === 'list');
-    }
-
-    function loadGames() {
-        db.ref('games').on('value', s => {
-            const div = document.getElementById('games'); div.innerHTML = '';
-            if(s.val()) Object.values(s.val()).reverse().forEach(g => {
-                div.innerHTML += `<div class="game-card"><h3>${g.title}</h3><a href="${g.link}" target="_blank" class="btn">ИГРАТЬ</a></div>`;
-            });
-        });
-    }
-
-    function addGame() {
-        db.ref('games').push({title:document.getElementById('gT').value, link:document.getElementById('gL').value, author:user.id});
-        showP('list');
-    }
+    });
 </script>
 </body>
 </html>

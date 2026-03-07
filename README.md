@@ -1,3 +1,9 @@
+# 🎮 GoodGames Portal
+Добро пожаловать в мой игровой мир!
+
+## 🚀 ЗАПУСТИТЬ ПОРТАЛ:
+[КЛИКАЙ СЮДА, ЧТОБЫ ИГРАТЬ](https://maxfesh14-maker.github.io/Goodgames-222444-/)
+
 # 🎮 GoodGames Ecosystem
 
 **GoodGames** — твоя персональная точка входа в мир бесконечных развлечений. 

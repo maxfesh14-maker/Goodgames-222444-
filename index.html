@@ -2,59 +2,171 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>GoodGames Portal</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
-        :root { --main: #FBC02D; --bg: #0b0b0b; --card: #161616; --text: #ffffff; --err: #ff4444; }
-        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; }
-        #maintenance-screen { position: fixed; inset: 0; background: var(--bg); z-index: 10000; display: flex; align-items: center; justify-content: center; text-align: center; padding: 20px; }
-        .content { padding: 20px; display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
-        .game-card { background: var(--card); padding: 20px; border-radius: 20px; border: 1px solid #222; text-align: center; }
-        .btn { background: var(--main); color: #000; padding: 10px; border-radius: 10px; text-decoration: none; display: block; font-weight: bold; margin-top: 10px; }
+        :root { --main: #FBC02D; --bg: #0b0b0b; --card: #161616; --text: #ffffff; --vip: #E040FB; --err: #ff4444; }
+        * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background: var(--bg); color: var(--text); margin: 0; display: flex; height: 100vh; overflow: hidden; flex-direction: row; }
+        #maint-screen { position: fixed; inset: 0; background: var(--bg); z-index: 20000; display: flex; align-items: center; justify-content: center; text-align: center; padding: 20px; }
+        #auth-screen { position: fixed; inset: 0; background: var(--bg); z-index: 10000; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .auth-card { background: var(--card); padding: 30px; border-radius: 25px; width: 100%; max-width: 340px; text-align: center; border: 1px solid #333; }
+        .sidebar { width: 260px; background: #000; padding: 20px; border-right: 1px solid #222; display: flex; flex-direction: column; z-index: 100; }
+        .content { flex: 1; padding: 20px; overflow-y: auto; padding-bottom: 80px; }
+        input, select { width: 100%; padding: 12px; margin: 8px 0; border-radius: 10px; border: 1px solid #333; background: #000; color: #fff; outline: none; }
+        .btn { background: var(--main); color: #000; border: none; padding: 14px; border-radius: 12px; font-weight: bold; cursor: pointer; width: 100%; text-align: center; display: block; text-decoration: none; }
+        .nav-btn { padding: 12px; color: #888; cursor: pointer; border-radius: 10px; margin-bottom: 5px; text-align: center; font-weight: bold; border: none; background: transparent; width: 100%; }
+        .nav-btn.active { background: var(--main); color: #000; }
+        .game-card { background: var(--card); border-radius: 18px; padding: 18px; margin-bottom: 20px; border: 1px solid #222; }
+        .vip-card { border: 2px solid var(--vip); }
+        .rev-item { font-size: 11px; background: #222; padding: 8px; border-radius: 8px; margin-top: 5px; color: #ccc; }
         .hidden { display: none !important; }
+        @media (max-width: 768px) { body { flex-direction: column; } .sidebar { width: 100%; height: 70px; border-top: 1px solid #222; position: fixed; bottom: 0; left: 0; flex-direction: row; justify-content: space-around; padding: 5px; } .sidebar h2, .u-info { display: none; } .nav-btn { margin-bottom: 0; flex: 1; font-size: 12px; } }
     </style>
 </head>
 <body>
 
-<div id="maintenance-screen" class="hidden">
-    <div>
-        <h1 style="font-size: 60px;">⚠️</h1>
-        <h2>Техническая неисправность</h2>
-        <p>Пожалуйста, попробуйте позже, мы скоро вернёмся!</p>
+<div id="maint-screen" class="hidden">
+    <div><h1 style="color:var(--err); font-size: 60px;">⚠️</h1><h2>Техническая неисправность</h2><p>Пожалуйста, попробуйте позже, мы скоро вернёмся!</p></div>
+</div>
+
+<div id="auth-screen">
+    <div class="auth-card">
+        <h2 id="a-title" style="color:var(--main); margin:0 0 20px;">GoodGames</h2>
+        <div id="login-form">
+            <input type="text" id="lName" placeholder="Логин">
+            <input type="password" id="lPass" placeholder="Пароль">
+            <button class="btn" onclick="doLogin()">ВОЙТИ</button>
+            <p onclick="toggleAuth(false)" style="font-size:12px; color:#666; cursor:pointer; margin-top:15px;">Регистрация</p>
+        </div>
+        <div id="reg-form" class="hidden">
+            <input type="text" id="rName" placeholder="Новый логин">
+            <input type="password" id="rPass" placeholder="Новый пароль">
+            <button class="btn" onclick="doReg()">СОЗДАТЬ</button>
+            <p onclick="toggleAuth(true)" style="font-size:12px; color:#666; cursor:pointer; margin-top:15px;">Уже есть аккаунт</p>
+        </div>
     </div>
 </div>
 
-<h1 style="text-align: center; color: var(--main);">🎮 GOODGAMES PORTAL</h1>
-<div class="content" id="games-list"></div>
+<div class="sidebar">
+    <h2 style="color:var(--main); text-align:center;">PORTAL</h2>
+    <div id="u-info" style="text-align:center; margin-bottom:15px; background:#111; padding:10px; border-radius:10px; font-size:14px;"></div>
+    <button id="btn-list" class="nav-btn active" onclick="showP('list')">🎮 ИГРОТЕКА</button>
+    <button id="nav-add" class="nav-btn hidden" onclick="showP('add')">➕ ОПУБЛИКОВАТЬ</button>
+    <div style="flex:1"></div>
+    <button class="nav-btn" onclick="location.reload()" style="color:var(--err)">🚪 ВЫХОД</button>
+</div>
+
+<div class="content">
+    <div id="p-list"><h1>Игротека</h1><div id="games"></div></div>
+    <div id="p-add" class="hidden">
+        <h1>➕ Публикация</h1>
+        <div class="game-card">
+            <input type="text" id="gT" placeholder="Название игры"><input type="text" id="gL" placeholder="Ссылка (https://...)">
+            <select id="gG"><option value="Экшен">Экшен</option><option value="Хоррор">Хоррор</option><option value="Аркада">Аркада</option></select>
+            <label style="display:block; margin:10px 0; font-size:12px;"><input type="checkbox" id="gV" style="width:auto;"> VIP ИГРА</label>
+            <button class="btn" onclick="addGame()">ОПУБЛИКОВАТЬ</button>
+        </div>
+    </div>
+</div>
 
 <script>
-    const firebaseConfig = { 
-        apiKey: "AIzaSyCD1HEwz_NsJDasETxc6X4IdCJ6_WFj-LA", 
-        databaseURL: "https://goodgames-222444-default-rtdb.firebaseio.com", 
-        projectId: "goodgames-222444" 
-    };
+    const firebaseConfig = { apiKey: "AIzaSyCD1HEwz_NsJDasETxc6X4IdCJ6_WFj-LA", databaseURL: "https://goodgames-222444-default-rtdb.firebaseio.com", projectId: "goodgames-222444" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
+    let user = null;
+    let myHWID = localStorage.getItem('hwid') || 'ID-' + Math.random().toString(36).substr(2, 9);
+    localStorage.setItem('hwid', myHWID);
 
-    // Слушаем режим ошибки
     db.ref('settings/maintenance').on('value', s => {
-        if (s.val() === true) {
-            document.getElementById('maintenance-screen').classList.remove('hidden');
-        } else {
-            document.getElementById('maintenance-screen').classList.add('hidden');
-        }
+        if (s.val() === true && (!user || user.id.toLowerCase() !== 'admin')) document.getElementById('maint-screen').classList.remove('hidden');
+        else document.getElementById('maint-screen').classList.add('hidden');
     });
 
-    // Загрузка игр
-    db.ref('games').on('value', s => {
-        const div = document.getElementById('games-list');
-        div.innerHTML = '';
-        if(s.val()) Object.values(s.val()).reverse().forEach(g => {
-            div.innerHTML += `<div class="game-card"><h3>${g.title}</h3><a href="${g.link}" target="_blank" class="btn">ИГРАТЬ</a></div>`;
+    function toggleAuth(isLogin) {
+        document.getElementById('login-form').classList.toggle('hidden', !isLogin);
+        document.getElementById('reg-form').classList.toggle('hidden', isLogin);
+    }
+
+    function doReg() {
+        const n = document.getElementById('rName').value.trim();
+        const p = document.getElementById('rPass').value.trim();
+        if(n.length<3) return alert("Мало букв!");
+        db.ref('users/'+n).once('value', s => {
+            if(s.val()) return alert("Занято!");
+            db.ref('users/'+n).set({ name: n, pass: p, verified: false, vip: false, lastHWID: myHWID });
+            alert("Создано!"); toggleAuth(true);
         });
-    });
+    }
+
+    function doLogin() {
+        const n = document.getElementById('lName').value.trim();
+        const p = document.getElementById('lPass').value.trim();
+        db.ref('users/'+n).once('value', s => {
+            const d = s.val();
+            if(!d || d.pass.toString() !== p) return alert("Ошибка!");
+            if(d.banned) return alert("Бан!");
+            db.ref('bannedHWID/'+myHWID).once('value', b => {
+                if(b.val()) return alert("Бан устройства!");
+                user = d; user.id = n;
+                db.ref('users/'+n).update({lastHWID: myHWID});
+                document.getElementById('auth-screen').classList.add('hidden');
+                initPortal();
+            });
+        });
+    }
+
+    function initPortal() {
+        document.getElementById('u-info').innerHTML = `<b>${user.id}</b> ${user.vip?'👑':''} ${user.verified?'✅':''}`;
+        if(user.verified || user.id.toLowerCase()==='admin') document.getElementById('nav-add').classList.remove('hidden');
+        loadGames();
+    }
+
+    function showP(p) {
+        document.getElementById('p-list').classList.toggle('hidden', p !== 'list');
+        document.getElementById('p-add').classList.toggle('hidden', p !== 'add');
+        document.getElementById('btn-list').classList.toggle('active', p === 'list');
+    }
+
+    function addGame() {
+        let l = document.getElementById('gL').value; if(!l.startsWith('http')) l = 'https://'+l;
+        db.ref('games').push({title:document.getElementById('gT').value, link:l, tag:document.getElementById('gG').value, author:user.id, vipGame:document.getElementById('gV').checked});
+        showP('list');
+    }
+
+    function loadGames() {
+        db.ref('games').on('value', s => {
+            const div = document.getElementById('games'); div.innerHTML = '';
+            if(s.val()) Object.entries(s.val()).reverse().forEach(([id, g]) => {
+                const can = !g.vipGame || (user.vip || user.verified || user.id.toLowerCase()==='admin');
+                div.innerHTML += `<div class="game-card ${g.vipGame?'vip-card':''}">
+                    <small style="color:var(--main)">${g.tag}</small><h3>${g.title}</h3>
+                    <p style="font-size:10px; color:#555">Автор: ${g.author}</p>
+                    ${can ? `<a href="${g.link}" target="_blank" class="btn">ИГРАТЬ</a>` : `<div class="btn" style="background:#222;color:#555">🔒 VIP</div>`}
+                    <div style="margin-top:15px; border-top:1px solid #333; padding-top:10px;">
+                        <input type="text" id="rev-${id}" placeholder="Отзыв..." style="font-size:12px;">
+                        <button class="btn" style="padding:5px; height:auto;" onclick="sendRev('${id}')">ОК</button>
+                        <div id="l-rev-${id}"></div>
+                    </div></div>`;
+                loadRevs(id);
+            });
+        });
+    }
+
+    function sendRev(id) {
+        const t = document.getElementById('rev-'+id).value; if(!t) return;
+        db.ref('reviews').push({ gameId: id, user: user.id, text: t });
+        document.getElementById('rev-'+id).value = '';
+    }
+
+    function loadRevs(id) {
+        db.ref('reviews').orderByChild('gameId').equalTo(id).on('value', s => {
+            const d = document.getElementById('l-rev-'+id); d.innerHTML = '';
+            if(s.val()) Object.values(s.val()).forEach(r => { d.innerHTML += `<div class="rev-item"><b>${r.user}:</b> ${r.text}</div>`; });
+        });
+    }
 </script>
 </body>
 </html>

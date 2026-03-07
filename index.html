@@ -10,24 +10,12 @@
         body { font-family: 'Segoe UI', sans-serif; background: #0b0b0b; color: white; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; overflow: hidden; }
         .card { background: #1a1a1a; padding: 30px; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.8); width: 320px; text-align: center; border: 1px solid #333; z-index: 10; position: relative; }
         h2 { color: #00f2fe; margin-bottom: 25px; text-transform: uppercase; letter-spacing: 2px; }
-        
         .input-group { position: relative; width: 100%; margin: 10px 0; }
         input { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #333; background: #222; color: white; box-sizing: border-box; outline: none; padding-right: 45px; }
-        
-        /* ГЛАЗИК */
-        .eye-icon { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; user-select: none; font-size: 18px; color: #888; }
-
+        .eye-icon { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #888; user-select: none; }
         button { width: 100%; padding: 13px; background: linear-gradient(45deg, #00f2fe, #4facfe); color: black; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; margin-top: 15px; transition: 0.3s; }
-        button:active { transform: scale(0.98); }
-        
         .toggle-link { margin-top: 20px; font-size: 0.9em; color: #888; cursor: pointer; text-decoration: underline; }
-
-        /* ОКНО С КОТОМ (ОБНОВЛЕННЫЙ GIF) */
-        #catOverlay { 
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: rgba(0,0,0,0.95) url('https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExOHp1eXp2Z3R4Y25xdWp3Z3J6eG5xdWp3Z3J6eG5xdWp3Z3J6eG5xdSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/GeimqsH0TLDt4tScGw/giphy.gif') no-repeat center center; 
-            background-size: contain; z-index: 1000; 
-        }
+        #catOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95) url('https://media.giphy.com/media/GeimqsH0TLDt4tScGw/giphy.gif') no-repeat center center; background-size: contain; z-index: 1000; }
     </style>
 </head>
 <body>
@@ -41,14 +29,14 @@
         <input type="password" id="passField" placeholder="Пароль">
         <span class="eye-icon" onclick="togglePass()">👁️</span>
     </div>
-    <button id="actionBtn" onclick="handleAuth()">Войти</button>
+    <button onclick="handleAuth()">Войти</button>
     <div class="toggle-link" id="switchBtn" onclick="toggleForm()">Регистрация</div>
 </div>
 
 <div id="catOverlay"></div>
 
 <script>
-    // Твои настройки Firebase (проверь их в консоли Firebase)
+    // ТВОИ НАСТРОЙКИ (AIzaSy...)
     const firebaseConfig = {
         apiKey: "AIzaSyAs-LhYl2vXF7S_Ym9S8V4j0Z1W2E3R4T5",
         authDomain: "goodgames-222444.firebaseapp.com",
@@ -63,22 +51,14 @@
     const db = firebase.database();
     let isLogin = true;
 
-    // Функция глазика
     function togglePass() {
         const pField = document.getElementById('passField');
-        pField.type = (pField.type === "password") ? "text" : "password";
+        pField.type = pField.type === "password" ? "text" : "password";
     }
-
-    // Закрытие кота
-    window.onpopstate = function() {
-        document.getElementById('catOverlay').style.display = 'none';
-        document.getElementById('authCard').style.opacity = '1';
-    };
 
     function toggleForm() {
         isLogin = !isLogin;
         document.getElementById('titleText').innerText = isLogin ? "GoodGames" : "Регистрация";
-        document.getElementById('actionBtn').innerText = isLogin ? "Войти" : "Создать профиль";
         document.getElementById('switchBtn').innerText = isLogin ? "Регистрация" : "Войти";
     }
 
@@ -86,13 +66,12 @@
         const u = document.getElementById('loginField').value.trim();
         const p = document.getElementById('passField').value.trim();
 
-        // 1. Проверка секретных слов (если пароль пустой)
+        // 1. СЕКРЕТНЫЕ СЛОВА
         if (p === '') {
             const secret = u.toLowerCase();
             if (secret === 'кот') {
                 document.getElementById('catOverlay').style.display = 'block';
-                document.getElementById('authCard').style.opacity = '0';
-                history.pushState({p:'c'}, '', '#cat');
+                document.getElementById('authCard').style.display = 'none';
                 return;
             }
             if (secret === 'google') {
@@ -101,34 +80,32 @@
             }
         }
 
-        // 2. Обычный вход
         if (!u || !p) return alert("Заполни поля!");
 
-        const userRef = db.ref('users/' + u);
-
+        const userPath = 'users/' + u;
+        
         if (isLogin) {
-            userRef.once('value').then((snapshot) => {
+            db.ref(userPath).once('value', (snapshot) => {
                 if (snapshot.exists()) {
                     const dbPass = snapshot.val().password.toString().trim();
                     if (dbPass === p) {
-                        alert("Успешный вход!");
+                        alert("Успешно! Привет, " + u);
                     } else {
                         alert("Неверный пароль!");
                     }
                 } else {
-                    alert("Пользователь не найден в папке users!");
+                    alert("Логин не найден!");
                 }
-            }).catch((error) => {
-                alert("Ошибка базы данных: " + error.message);
+            }, (error) => {
+                alert("Ошибка базы: " + error.message);
             });
         } else {
-            userRef.set({password: p, role: "user"}).then(() => {
+            db.ref(userPath).set({password: p}).then(() => {
                 alert("Аккаунт создан!");
                 toggleForm();
             });
         }
     }
-    history.pushState(null, null, window.location.href);
 </script>
 </body>
 </html>

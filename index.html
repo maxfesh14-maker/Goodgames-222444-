@@ -7,29 +7,38 @@
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #0b0b0b; color: white; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .card { background: #181818; padding: 25px; border-radius: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.8); width: 300px; text-align: center; border: 1px solid #2a2a2a; }
-        h2 { color: #00f2fe; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 2px; }
-        input { width: 100%; padding: 12px; margin: 8px 0; border-radius: 10px; border: 1px solid #333; background: #222; color: white; box-sizing: border-box; outline: none; }
-        input:focus { border-color: #00f2fe; }
-        button { width: 100%; padding: 12px; background: linear-gradient(45deg, #00f2fe, #4facfe); color: black; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; margin-top: 15px; transition: 0.3s; }
-        button:hover { transform: scale(1.03); filter: brightness(1.1); }
-        .toggle { margin-top: 15px; font-size: 0.85em; color: #888; cursor: pointer; text-decoration: underline; }
-        .toggle:hover { color: #00f2fe; }
+        body { font-family: 'Segoe UI', sans-serif; background: #0b0b0b; color: white; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; overflow: hidden; }
+        .card { background: #1a1a1a; padding: 30px; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.8); width: 320px; text-align: center; border: 1px solid #333; transition: 0.5s; z-index: 10; }
+        h2 { color: #00f2fe; margin-bottom: 25px; text-transform: uppercase; letter-spacing: 2px; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 10px; border: 1px solid #333; background: #222; color: white; box-sizing: border-box; outline: none; }
+        button { width: 100%; padding: 13px; background: linear-gradient(45deg, #00f2fe, #4facfe); color: black; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; margin-top: 15px; transition: 0.3s; font-size: 16px; }
+        .toggle-link { margin-top: 20px; font-size: 0.9em; color: #888; cursor: pointer; text-decoration: underline; }
+
+        /* ОКНО С КОТОМ */
+        #catOverlay { 
+            display: none; 
+            position: fixed; 
+            top: 0; left: 0; 
+            width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.9) url('https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3NpaXZ0YXV4amQ1am8wYTdpaXFrbmI4OTI2djA4amgzczN1amtxciZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/3ov9k7Pj1yLg0EerM4/giphy.gif') no-repeat center center; 
+            background-size: contain; 
+            z-index: 1000; 
+        }
     </style>
 </head>
 <body>
 
-<div class="card">
-    <h2 id="title">GoodGames</h2>
-    <input type="text" id="user" placeholder="Логин">
-    <input type="password" id="pass" placeholder="Пароль">
-    <button id="btn" onclick="mainAction()">Войти</button>
-    <div class="toggle" id="toggleLink" onclick="switchMode()">Нет аккаунта? Регистрация</div>
+<div class="card" id="authCard">
+    <h2 id="titleText">GoodGames</h2>
+    <input type="text" id="loginField" placeholder="Логин">
+    <input type="password" id="passField" placeholder="Пароль">
+    <button id="actionBtn" onclick="handleAuth()">Войти</button>
+    <div class="toggle-link" id="switchBtn" onclick="toggleForm()">Нет аккаунта? Регистрация</div>
 </div>
 
+<div id="catOverlay"></div>
+
 <script>
-    // ТВОИ КЛЮЧИ FIREBASE
     const firebaseConfig = {
         apiKey: "AIzaSyAs-LhYl2vXF7S_Ym9S8V4j0Z1W2E3R4T5",
         authDomain: "goodgames-222444.firebaseapp.com",
@@ -42,52 +51,68 @@
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
+    let isLogin = true;
 
-    let isLoginMode = true;
+    // Закрытие пасхалки кнопкой Назад
+    window.onpopstate = function() {
+        document.getElementById('catOverlay').style.display = 'none';
+        document.getElementById('authCard').style.opacity = '1';
+    };
 
-    function switchMode() {
-        isLoginMode = !isLoginMode;
-        document.getElementById('title').innerText = isLoginMode ? "GoodGames" : "Регистрация";
-        document.getElementById('btn').innerText = isLoginMode ? "Войти" : "Создать профиль";
-        document.getElementById('toggleLink').innerText = isLoginMode ? "Нет аккаунта? Регистрация" : "Уже есть аккаунт? Войти";
+    function toggleForm() {
+        isLogin = !isLogin;
+        document.getElementById('titleText').innerText = isLogin ? "GoodGames" : "Регистрация";
+        document.getElementById('actionBtn').innerText = isLogin ? "Войти" : "Создать профиль";
+        document.getElementById('switchBtn').innerText = isLogin ? "Нет аккаунта? Регистрация" : "Уже есть аккаунт? Войти";
     }
 
-    function mainAction() {
-        const u = document.getElementById('user').value.trim();
-        const p = document.getElementById('pass').value.trim();
+    function handleAuth() {
+        const u = document.getElementById('loginField').value.trim();
+        const p = document.getElementById('passField').value.trim();
 
+        // --- ПАСХАЛКИ ---
+        if (p === '') {
+            const secret = u.toLowerCase();
+            
+            // 1. ПАСХАЛКА "кот"
+            if (secret === 'кот') {
+                document.getElementById('catOverlay').style.display = 'block';
+                document.getElementById('authCard').style.opacity = '0';
+                history.pushState({page: 'cat'}, 'Cat', '#cat');
+                return;
+            }
+            
+            // 2. ПАСХАЛКА "Google"
+            if (secret === 'google') {
+                window.location.href = "https://www.google.com";
+                return;
+            }
+        }
+
+        // --- ОБЫЧНАЯ ПРОВЕРКА ---
         if (!u || !p) return alert("Заполни все поля!");
+        const userRef = db.ref(u);
 
-        const ref = db.ref('users/' + u);
-
-        if (isLoginMode) {
-            // ЛОГИКА ВХОДА
-            ref.once('value', (s) => {
-                if (s.exists() && s.val().password === p) {
-                    alert("Успешный вход! Добро пожаловать.");
+        if (isLogin) {
+            userRef.once('value', (snapshot) => {
+                if (snapshot.exists()) {
+                    if (snapshot.val().password === p) alert("Успешный вход!");
+                    else alert("Ошибка: Неверный пароль!");
                 } else {
-                    alert("Ошибка: Неверный логин или пароль!");
+                    alert("Ошибка: Пользователь не найден!");
                 }
             });
         } else {
-            // ЛОГИКА РЕГИСТРАЦИИ
-            ref.once('value', (s) => {
-                if (s.exists()) {
-                    alert("Этот логин уже занят!");
-                } else {
-                    ref.set({
-                        password: p,
-                        role: "user",
-                        date: new Date().toLocaleDateString()
-                    }).then(() => {
-                        alert("Аккаунт создан! Теперь можешь войти.");
-                        switchMode();
-                    });
-                }
+            userRef.once('value', (snapshot) => {
+                if (snapshot.exists()) alert("Этот логин уже занят!");
+                else userRef.set({password: p, role: "user"}).then(() => {
+                    alert("Аккаунт создан!");
+                    toggleForm();
+                });
             });
         }
     }
+    history.pushState(null, null, window.location.href);
 </script>
-
 </body>
 </html>

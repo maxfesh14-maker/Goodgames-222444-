@@ -14,13 +14,13 @@
         button { width: 100%; padding: 13px; background: linear-gradient(45deg, #00f2fe, #4facfe); color: black; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; margin-top: 15px; transition: 0.3s; font-size: 16px; }
         .toggle-link { margin-top: 20px; font-size: 0.9em; color: #888; cursor: pointer; text-decoration: underline; }
 
-        /* ОКНО С КОТОМ */
+        /* ОКНО С НОВЫМ КОТОМ */
         #catOverlay { 
             display: none; 
             position: fixed; 
             top: 0; left: 0; 
             width: 100%; height: 100%; 
-            background: rgba(0,0,0,0.9) url('https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3NpaXZ0YXV4amQ1am8wYTdpaXFrbmI4OTI2djA4amgzczN1amtxciZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/3ov9k7Pj1yLg0EerM4/giphy.gif') no-repeat center center; 
+            background: rgba(0,0,0,0.9) url('https://media.giphy.com/media/GeimqsH0TLDt4tScGw/giphy.gif') no-repeat center center; 
             background-size: contain; 
             z-index: 1000; 
         }
@@ -53,7 +53,6 @@
     const db = firebase.database();
     let isLogin = true;
 
-    // Закрытие пасхалки кнопкой Назад
     window.onpopstate = function() {
         document.getElementById('catOverlay').style.display = 'none';
         document.getElementById('authCard').style.opacity = '1';
@@ -70,26 +69,20 @@
         const u = document.getElementById('loginField').value.trim();
         const p = document.getElementById('passField').value.trim();
 
-        // --- ПАСХАЛКИ ---
         if (p === '') {
             const secret = u.toLowerCase();
-            
-            // 1. ПАСХАЛКА "кот"
             if (secret === 'кот') {
                 document.getElementById('catOverlay').style.display = 'block';
                 document.getElementById('authCard').style.opacity = '0';
                 history.pushState({page: 'cat'}, 'Cat', '#cat');
                 return;
             }
-            
-            // 2. ПАСХАЛКА "Google"
             if (secret === 'google') {
                 window.location.href = "https://www.google.com";
                 return;
             }
         }
 
-        // --- ОБЫЧНАЯ ПРОВЕРКА ---
         if (!u || !p) return alert("Заполни все поля!");
         const userRef = db.ref(u);
 

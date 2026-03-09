@@ -7,36 +7,39 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
         :root { --main: #FBC02D; --bg: #050505; --card: #111; --text: #fff; }
-        body { background: var(--bg); color: var(--text); font-family: sans-serif; margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
+        body { background: var(--bg); color: var(--text); font-family: sans-serif; margin: 0; padding: 0; }
         
-        /* Вход */
-        #login-box { background: var(--card); padding: 30px; border-radius: 15px; border: 1px solid #333; text-align: center; }
-        input { padding: 12px; margin: 10px 0; background: #000; border: 1px solid #444; color: #fff; border-radius: 8px; width: 200px; }
-        .btn { background: var(--main); color: #000; font-weight: bold; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; }
+        /* Центрируем вход */
+        #login-box { 
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: var(--card); padding: 30px; border-radius: 15px; 
+            border: 1px solid #333; text-align: center; width: 280px;
+        }
+        input { padding: 12px; margin: 10px 0; background: #000; border: 1px solid #444; color: #fff; border-radius: 8px; width: 90%; }
+        .btn { background: var(--main); color: #000; font-weight: bold; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; width: 100%; }
 
         /* Уведомление МЭШ */
         #mesh-toast {
             position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%);
             background: #1e1e1e; color: white; padding: 15px 30px; border-radius: 50px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.8); transition: 0.6s; z-index: 10000; border: 1px solid #333;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8); transition: 0.6s ease-in-out; z-index: 10000; border: 1px solid #333;
         }
         #mesh-toast.active { bottom: 40px; }
         
-        #portal-ui { display: none; text-align: center; }
+        #portal-ui { display: none; padding: 50px; text-align: center; }
     </style>
 </head>
 <body>
 
     <div id="login-box">
-        <h2 style="color:var(--main)">Вход в Good Games</h2>
-        <input type="text" id="nick-input" placeholder="Ваш ник..."> <br>
-        <button class="btn" onclick="login()">Войти</button>
+        <h2 style="color:var(--main)">Вход</h2>
+        <input type="text" id="nick-input" placeholder="Никнейм">
+        <button class="btn" onclick="login()">ВОЙТИ</button>
     </div>
 
     <div id="portal-ui">
-        <h1 style="color:var(--main)">GOOD GAMES</h1>
-        <p>Привет, <span id="display-name" style="font-weight:bold"></span>!</p>
-        <p>Ты в системе. Жди сообщений от админа.</p>
+        <h1 style="color:var(--main)">ПОРТАЛ GOOD GAMES</h1>
+        <p>Добро пожаловать, <b id="display-name"></b>!</p>
     </div>
 
     <div id="mesh-toast">📩 <span id="msg-text"></span></div>
@@ -50,29 +53,20 @@
         const db = firebase.database();
 
         function login() {
-            const nick = document.getElementById('nick-input').value;
-            if(!nick) return alert("Введите ник!");
+            const nick = document.getElementById('nick-input').value.trim();
+            if(!nick) return alert("Введи ник!");
 
             document.getElementById('login-box').style.display = 'none';
             document.getElementById('portal-ui').style.display = 'block';
             document.getElementById('display-name').innerText = nick;
 
-            startSystem(nick);
-        }
+            // Работа с базой
+            const userRef = db.ref('users/' + nick);
+            userRef.update({ status: 'online', name: nick });
+            userRef.child('status').onDisconnect().set('offline');
 
-        function startSystem(userNick) {
-            const stRef = db.ref('users/' + userNick);
-            
-            // Статус Online
-            db.ref('.info/connected').on('value', s => {
-                if(s.val()) {
-                    stRef.update({ status: 'online', name: userNick });
-                    stRef.child('status').onDisconnect().set('offline');
-                }
-            });
-
-            // Слушаем личные сообщения МЭШ
-            stRef.child('remoteMsg').on('value', s => {
+            // Слушаем сообщения
+            userRef.child('remoteMsg').on('value', s => {
                 const msg = s.val();
                 if(msg) {
                     const toast = document.getElementById('mesh-toast');
@@ -80,7 +74,7 @@
                     toast.classList.add('active');
                     setTimeout(() => { 
                         toast.classList.remove('active');
-                        stRef.update({ remoteMsg: "" }); 
+                        userRef.update({ remoteMsg: "" }); 
                     }, 5000);
                 }
             });

@@ -2,84 +2,50 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Good Games Портал</title>
+    <title>Good Games Portal</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
-        :root { --main: #FBC02D; --bg: #050505; --text: #fff; }
-        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; }
-        
-        /* Уведомление в стиле МЭШ */
-        #mesh-notification {
+        body { background: #050505; color: white; font-family: sans-serif; }
+        /* Стиль уведомления МЭШ */
+        #mesh-toast {
             position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%);
-            background: #1e1e1e; color: white; padding: 15px 30px; border-radius: 50px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.8); display: flex; align-items: center;
-            transition: bottom 0.6s cubic-bezier(0.68, -0.55, 0.27, 1.55); z-index: 10000;
-            border: 1px solid #333; min-width: 300px;
+            background: #1e1e1e; color: white; padding: 15px 25px; border-radius: 50px;
+            border: 1px solid #333; transition: 0.5s; z-index: 9999;
         }
-        #mesh-notification.active { bottom: 40px; }
-        .mesh-dot { background: #0078d7; width: 12px; height: 12px; border-radius: 50%; margin-right: 15px; }
-
-        .content { padding: 50px; text-align: center; }
-        #ban-screen { position: fixed; top:0; left:0; width:100%; height:100%; background:#000; display:none; justify-content:center; align-items:center; z-index:20000; color:red; }
+        #mesh-toast.active { bottom: 30px; }
     </style>
 </head>
 <body>
 
-<div id="ban-screen"><h1>🚫 ДОСТУП ОГРАНИЧЕН (HWID BAN)</h1></div>
+    <div id="mesh-toast">📩 <span id="toast-text"></span></div>
 
-<div id="mesh-notification">
-    <div class="mesh-dot"></div>
-    <span id="msg-text">Уведомление</span>
-</div>
+    <script>
+        const firebaseConfig = { 
+            apiKey: "AIzaSyCD1HEwz_NsJDasETxc6X4IdCJ6_WFj-LA", 
+            databaseURL: "https://goodgames-222444-default-rtdb.firebaseio.com" 
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
 
-<div class="content">
-    <h1 style="color:var(--main)">GOOD GAMES PORTAL</h1>
-    <p>Добро пожаловать, <span id="user-name">Загрузка...</span></p>
-    <div id="status-box">Ожидание подключения...</div>
-</div>
+        // ВАЖНО: Тут должен быть ник того, кто зашел (например, через вход)
+        const myName = "Maksim_Dev"; 
 
-<script>
-    const firebaseConfig = { 
-        apiKey: "AIzaSyCD1HEwz_NsJDasETxc6X4IdCJ6_WFj-LA", 
-        databaseURL: "https://goodgames-222444-default-rtdb.firebaseio.com", 
-        projectId: "goodgames-222444" 
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-
-    const myNick = "Maksim_Dev"; // Здесь будет ник пользователя
-    const myHWID = "GG-" + Math.abs(window.screen.width * window.screen.height ^ navigator.hardwareConcurrency);
-
-    // Проверка бана
-    db.ref('bannedHWID/' + myHWID).on('value', s => {
-        if(s.val()) document.getElementById('ban-screen').style.display = 'flex';
-    });
-
-    // Статус ONLINE/OFFLINE
-    const stRef = db.ref('users/' + myNick);
-    db.ref('.info/connected').on('value', s => {
-        if(s.val()) {
-            stRef.update({ status: 'online', lastHWID: myHWID, name: myNick });
-            stRef.child('status').onDisconnect().set('offline');
-        }
-    });
-
-    // Ловим сообщение от тебя (Админа)
-    stRef.child('remoteMsg').on('value', s => {
-        const msg = s.val();
-        if(msg) {
-            const toast = document.getElementById('mesh-notification');
-            document.getElementById('msg-text').innerText = msg;
-            toast.classList.add('active');
-            setTimeout(() => { 
-                toast.classList.remove('active');
-                stRef.update({ remoteMsg: "" }); // Стираем в базе
-            }, 5000);
-        }
-    });
-
-    document.getElementById('user-name').innerText = myNick;
-</script>
+        // Слушаем личные сообщения из облака
+        db.ref('users/' + myName + '/remoteMsg').on('value', (s) => {
+            const msg = s.val();
+            if(msg) {
+                const toast = document.getElementById('mesh-toast');
+                document.getElementById('toast-text').innerText = msg;
+                toast.classList.add('active');
+                
+                // Прячем через 5 секунд и удаляем из базы, чтобы не всплывало при перезагрузке
+                setTimeout(() => {
+                    toast.classList.remove('active');
+                    db.ref('users/' + myName + '/remoteMsg').set("");
+                }, 5000);
+            }
+        });
+    </script>
 </body>
 </html>

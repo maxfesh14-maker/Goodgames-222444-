@@ -7,38 +7,41 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
-        :root { --main: #FBC02D; --bg: #000; --card: #111; --text: #fff; --err: #ff4444; }
-        body { background: var(--bg); color: var(--text); font-family: sans-serif; margin: 0; padding: 10px; }
+        :root { --main: #FBC02D; --bg: #000; --card: #111; --text: #fff; --nav: #151515; }
+        body { background: var(--bg); color: var(--text); font-family: sans-serif; margin: 0; padding-bottom: 80px; }
         
-        /* Тот самый экран ошибки для всех */
-        #error-mode { 
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: #000; color: var(--err); display: none; 
-            flex-direction: column; justify-content: center; align-items: center; 
-            z-index: 10000; text-align: center; 
-        }
+        /* Экран ошибки */
+        #error-mode { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; color: #ff4444; display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 10000; text-align: center; }
 
-        #login-box { 
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: #000; display: flex; flex-direction: column; 
-            justify-content: center; align-items: center; z-index: 5000; 
-        }
-        .card { background: var(--card); padding: 15px; border-radius: 12px; border: 1px solid #222; margin-bottom: 15px; width: 100%; box-sizing: border-box; }
-        input, textarea { width: 100%; padding: 12px; margin: 8px 0; background: #222; border: 1px solid #444; color: #fff; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        /* Вход */
+        #login-box { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 5000; }
         .btn { background: var(--main); color: #000; font-weight: bold; border: none; padding: 14px; border-radius: 8px; cursor: pointer; width: 100%; font-size: 16px; }
-        
-        #portal-ui { display: none; max-width: 600px; margin: 0 auto; }
+        input, textarea { width: 100%; padding: 12px; margin: 8px 0; background: #222; border: 1px solid #444; color: #fff; border-radius: 8px; box-sizing: border-box; }
+
+        /* Вкладки */
+        .page { display: none; padding: 15px; max-width: 600px; margin: 0 auto; }
+        .active-page { display: block; }
+
+        /* Нижняя панель навигации */
+        .nav-bar { 
+            position: fixed; bottom: 0; left: 0; width: 100%; height: 65px; 
+            background: var(--nav); border-top: 1px solid #333; 
+            display: flex; justify-content: space-around; align-items: center; z-index: 4000; 
+        }
+        .nav-item { color: #888; text-decoration: none; font-size: 12px; text-align: center; cursor: pointer; }
+        .nav-item.active { color: var(--main); }
+        .nav-item i { font-size: 24px; display: block; margin-bottom: 4px; }
+
+        .card { background: var(--card); padding: 15px; border-radius: 12px; border: 1px solid #222; margin-bottom: 15px; }
+        .verified-badge { color: #00d2ff; margin-left: 5px; font-size: 14px; }
     </style>
 </head>
 <body>
 
-<div id="error-mode">
-    <h1 style="font-size: 40px;">⚠️ 404</h1>
-    <p>ТЕХНИЧЕСКИЕ РАБОТЫ<br>Попробуйте зайти позже</p>
-</div>
+<div id="error-mode"><h1>⚠️ 404<br><small>ТЕХНИЧЕСКИЕ РАБОТЫ</small></h1></div>
 
 <div id="login-box">
-    <div style="width: 90%; max-width: 300px;">
+    <div style="width: 85%; max-width: 300px;">
         <h2 style="color:var(--main); text-align:center;">GOOD GAMES</h2>
         <input type="text" id="n-i" placeholder="Ник">
         <input type="password" id="p-i" placeholder="Пароль">
@@ -46,20 +49,31 @@
     </div>
 </div>
 
-<div id="portal-ui">
-    <div class="card">
-        <h2 style="margin:0; color:var(--main);">ГЛАВНАЯ</h2>
-        <p>Привет, <b id="user-display"></b></p>
+<div id="portal-ui" style="display:none">
+    <div id="page-home" class="page active-page">
+        <h2 style="color:var(--main)">Лента игр</h2>
+        <div id="games-feed"></div>
     </div>
 
-    <div class="card">
-        <h3>Опубликовать игру</h3>
-        <input type="text" id="gt" placeholder="Название">
-        <textarea id="gd" placeholder="Описание проекта"></textarea>
-        <button class="btn" onclick="pub()">ОТПРАВИТЬ</button>
+    <div id="page-pub" class="page">
+        <h2 style="color:var(--main)">Публикация</h2>
+        <div id="pub-container">
+            </div>
     </div>
 
-    <div id="games-feed"></div>
+    <div id="page-profile" class="page">
+        <h2 style="color:var(--main)">Мой профиль</h2>
+        <div class="card">
+            <h3 id="u-display"></h3>
+            <p id="u-status-text"></p>
+        </div>
+    </div>
+
+    <div class="nav-bar">
+        <div class="nav-item active" onclick="showPage('home', this)">🏠<br>Главная</div>
+        <div class="nav-item" onclick="showPage('pub', this)">➕<br>Создать</div>
+        <div class="nav-item" onclick="showPage('profile', this)">👤<br>Профиль</div>
+    </div>
 </div>
 
 <script>
@@ -69,8 +83,8 @@
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
+    let user = { nick: "", verified: false };
 
-    // ПРОВЕРКА РЕЖИМА ОШИБКИ ДЛЯ ВСЕХ
     db.ref('settings/maintenance').on('value', s => {
         document.getElementById('error-mode').style.display = s.val() ? 'flex' : 'none';
     });
@@ -79,26 +93,64 @@
         const n = document.getElementById('n-i').value.trim();
         const p = document.getElementById('p-i').value.trim();
         db.ref('users/' + n).once('value', s => {
-            if(s.val() && s.val().pass === p) {
+            const data = s.val();
+            if(data && data.pass === p) {
+                user.nick = n;
+                user.verified = data.verified || false;
+                
                 document.getElementById('login-box').style.display = 'none';
                 document.getElementById('portal-ui').style.display = 'block';
-                document.getElementById('user-display').innerText = n;
-                load();
+                document.getElementById('u-display').innerHTML = n + (user.verified ? '<span class="verified-badge">✔</span>' : '');
+                document.getElementById('u-status-text').innerText = user.verified ? "Статус: Проверенный автор" : "Статус: Обычный игрок";
+                
+                setupPubTab();
+                loadGames();
             } else { alert("Ошибка!"); }
         });
     }
 
-    function pub() {
-        const t = document.getElementById('gt').value;
-        const d = document.getElementById('gd').value;
-        if(t) db.ref('games').push({ title: t, desc: d, author: document.getElementById('user-display').innerText });
+    function showPage(pageId, el) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active-page'));
+        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+        document.getElementById('page-' + pageId).classList.add('active-page');
+        el.classList.add('active');
     }
 
-    function load() {
+    function setupPubTab() {
+        const cont = document.getElementById('pub-container');
+        if(user.verified) {
+            cont.innerHTML = `
+                <div class="card">
+                    <input type="text" id="gt" placeholder="Название игры">
+                    <textarea id="gd" placeholder="Описание и ссылка"></textarea>
+                    <button class="btn" onclick="publish()">ОПУБЛИКОВАТЬ</button>
+                </div>`;
+        } else {
+            cont.innerHTML = `<div class="card" style="text-align:center;">
+                <p>🚫 Публикация доступна только проверенным пользователям с галочкой.</p>
+                <small>Обратитесь к админу для получения статуса.</small>
+            </div>`;
+        }
+    }
+
+    function publish() {
+        const t = document.getElementById('gt').value;
+        const d = document.getElementById('gd').value;
+        if(t) {
+            db.ref('games').push({ title: t, desc: d, author: user.nick, verified: user.verified });
+            alert("Игра отправлена!");
+            showPage('home', document.querySelector('.nav-item'));
+        }
+    }
+
+    function loadGames() {
         db.ref('games').on('value', s => {
             const f = document.getElementById('games-feed'); f.innerHTML = "";
             if(s.val()) Object.values(s.val()).reverse().forEach(g => {
-                f.innerHTML += `<div class="card"><b>${g.title}</b><br><small>Автор: ${g.author}</small><p>${g.desc}</p></div>`;
+                f.innerHTML += `<div class="card">
+                    <b>${g.title} ${g.verified ? '<span class="verified-badge">✔</span>' : ''}</b><br>
+                    <small>Автор: ${g.author}</small><p>${g.desc}</p>
+                </div>`;
             });
         });
     }

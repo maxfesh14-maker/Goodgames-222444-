@@ -7,52 +7,31 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
         :root { --main: #FBC02D; --bg: #050505; --card: #111; --text: #fff; }
-        body { background: var(--bg); color: var(--text); font-family: sans-serif; margin: 0; padding: 0; }
-        
-        /* Вход */
+        body { background: var(--bg); color: var(--text); font-family: sans-serif; margin: 0; }
         #login-box { 
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            background: var(--card); padding: 30px; border-radius: 15px; 
-            border: 1px solid #333; text-align: center; width: 280px; z-index: 100;
+            background: var(--card); padding: 30px; border-radius: 15px; border: 1px solid #333; text-align: center; width: 280px; 
         }
         input { padding: 12px; margin: 10px 0; background: #000; border: 1px solid #444; color: #fff; border-radius: 8px; width: 90%; }
         .btn { background: var(--main); color: #000; font-weight: bold; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; width: 100%; }
-
-        /* Сам портал */
         #portal-ui { display: none; padding: 20px; }
-        .header { border-bottom: 2px solid var(--main); padding-bottom: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
-        .game-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; }
-        .card { background: var(--card); padding: 15px; border-radius: 12px; border: 1px solid #222; }
-
-        /* Уведомление МЭШ */
-        #mesh-toast {
-            position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%);
-            background: #1e1e1e; color: white; padding: 15px 30px; border-radius: 50px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.8); transition: 0.6s ease-in-out; z-index: 10000; border: 1px solid #333;
-        }
-        #mesh-toast.active { bottom: 40px; }
     </style>
 </head>
 <body>
 
     <div id="login-box">
-        <h2 style="color:var(--main)">Good Games</h2>
+        <h2 style="color:var(--main)">ВХОД</h2>
         <input type="text" id="nick-input" placeholder="Никнейм">
-        <button class="btn" onclick="login()">ВОЙТИ В АККАУНТ</button>
+        <input type="password" id="pass-input" placeholder="Пароль">
+        <button class="btn" onclick="login()">ВОЙТИ</button>
     </div>
 
     <div id="portal-ui">
-        <div class="header">
-            <h1 style="color:var(--main); margin:0;">GOOD GAMES</h1>
-            <span>Привет, <b id="display-name"></b></span>
-        </div>
-        
-        <div class="game-list" id="games-container">
-            <div class="card">Загрузка проектов...</div>
-        </div>
+        <h1 style="color:var(--main)">ПОРТАЛ ИГР</h1>
+        <p>Вы вошли как: <b id="display-name"></b></p>
+        <hr>
+        <div id="games-container"></div>
     </div>
-
-    <div id="mesh-toast">📩 <span id="msg-text"></span></div>
 
     <script>
         const firebaseConfig = { 
@@ -64,47 +43,22 @@
 
         function login() {
             const nick = document.getElementById('nick-input').value.trim();
-            if(!nick) return alert("Введи ник!");
+            const pass = document.getElementById('pass-input').value.trim();
+            if(!nick || !pass) return alert("Заполни все поля!");
 
-            // ПОКАЗЫВАЕМ ПОРТАЛ И СКРЫВАЕМ ВХОД
-            document.getElementById('login-box').style.display = 'none';
-            document.getElementById('portal-ui').style.display = 'block';
-            document.getElementById('display-name').innerText = nick;
-
-            startSystem(nick);
-        }
-
-        function startSystem(nick) {
-            const userRef = db.ref('users/' + nick);
-            
-            // Статус онлайн
-            userRef.update({ status: 'online', name: nick });
-            userRef.child('status').onDisconnect().set('offline');
-
-            // Слушаем личные уведомления (МЭШ стиль)
-            userRef.child('remoteMsg').on('value', s => {
-                const msg = s.val();
-                if(msg) {
-                    const toast = document.getElementById('mesh-toast');
-                    document.getElementById('msg-text').innerText = msg;
-                    toast.classList.add('active');
-                    setTimeout(() => { 
-                        toast.classList.remove('active');
-                        userRef.update({ remoteMsg: "" }); 
-                    }, 5000);
-                }
-            });
-
-            // Загрузка игр в портал
-            db.ref('games').on('value', s => {
-                const container = document.getElementById('games-container');
-                container.innerHTML = "";
-                if(s.val()) {
-                    Object.entries(s.val()).forEach(([id, g]) => {
-                        container.innerHTML += `<div class="card"><h3>${g.title}</h3><p>${g.desc || ''}</p><small>Автор: ${g.author}</small></div>`;
-                    });
+            // Проверяем пароль в базе
+            db.ref('users/' + nick).once('value', s => {
+                const user = s.val();
+                if(user && user.pass === pass) {
+                    document.getElementById('login-box').style.display = 'none';
+                    document.getElementById('portal-ui').style.display = 'block';
+                    document.getElementById('display-name').innerText = nick;
+                    
+                    // Ставим статус online
+                    db.ref('users/' + nick).update({ status: 'online' });
+                    db.ref('users/' + nick + '/status').onDisconnect().set('offline');
                 } else {
-                    container.innerHTML = "Игр пока нет.";
+                    alert("Неверный ник или пароль!");
                 }
             });
         }

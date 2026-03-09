@@ -2,46 +2,64 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Good Games Portal</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
-        :root { --main: #FBC02D; --bg: #050505; --card: #111; --text: #fff; }
-        body { background: var(--bg); color: var(--text); font-family: sans-serif; margin: 0; padding: 20px; }
-        #login-box { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 1000; }
-        .card { background: var(--card); padding: 20px; border-radius: 15px; border: 1px solid #222; margin-bottom: 20px; }
-        input, textarea { padding: 12px; margin: 5px 0; background: #000; border: 1px solid #444; color: #fff; border-radius: 8px; width: 100%; box-sizing: border-box; }
-        .btn { background: var(--main); color: #000; font-weight: bold; border: none; padding: 12px; border-radius: 8px; cursor: pointer; width: 100%; }
-        #portal-ui { display: none; max-width: 800px; margin: 0 auto; }
-        .game-item { border-bottom: 1px solid #333; padding: 10px 0; }
+        :root { --main: #FBC02D; --bg: #000; --card: #111; --text: #fff; --err: #ff4444; }
+        body { background: var(--bg); color: var(--text); font-family: sans-serif; margin: 0; padding: 10px; }
+        
+        /* Тот самый экран ошибки для всех */
+        #error-mode { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: #000; color: var(--err); display: none; 
+            flex-direction: column; justify-content: center; align-items: center; 
+            z-index: 10000; text-align: center; 
+        }
+
+        #login-box { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: #000; display: flex; flex-direction: column; 
+            justify-content: center; align-items: center; z-index: 5000; 
+        }
+        .card { background: var(--card); padding: 15px; border-radius: 12px; border: 1px solid #222; margin-bottom: 15px; width: 100%; box-sizing: border-box; }
+        input, textarea { width: 100%; padding: 12px; margin: 8px 0; background: #222; border: 1px solid #444; color: #fff; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        .btn { background: var(--main); color: #000; font-weight: bold; border: none; padding: 14px; border-radius: 8px; cursor: pointer; width: 100%; font-size: 16px; }
+        
+        #portal-ui { display: none; max-width: 600px; margin: 0 auto; }
     </style>
 </head>
 <body>
 
+<div id="error-mode">
+    <h1 style="font-size: 40px;">⚠️ 404</h1>
+    <p>ТЕХНИЧЕСКИЕ РАБОТЫ<br>Попробуйте зайти позже</p>
+</div>
+
 <div id="login-box">
-    <h2 style="color:var(--main)">ВХОД В GOOD GAMES</h2>
-    <input type="text" id="nick-i" placeholder="Никнейм" style="width:250px">
-    <input type="password" id="pass-i" placeholder="Пароль" style="width:250px">
-    <button class="btn" onclick="login()" style="width:250px; margin-top:10px;">ВОЙТИ</button>
+    <div style="width: 90%; max-width: 300px;">
+        <h2 style="color:var(--main); text-align:center;">GOOD GAMES</h2>
+        <input type="text" id="n-i" placeholder="Ник">
+        <input type="password" id="p-i" placeholder="Пароль">
+        <button class="btn" onclick="login()">ВХОД</button>
+    </div>
 </div>
 
 <div id="portal-ui">
     <div class="card">
-        <h1>Добро пожаловать, <span id="u-name"></span>!</h1>
-        <p>Статус: В сети ✅</p>
+        <h2 style="margin:0; color:var(--main);">ГЛАВНАЯ</h2>
+        <p>Привет, <b id="user-display"></b></p>
     </div>
 
     <div class="card">
         <h3>Опубликовать игру</h3>
-        <input type="text" id="g-title" placeholder="Название игры">
-        <textarea id="g-desc" placeholder="Описание проекта"></textarea>
-        <button class="btn" onclick="publishGame()">ОПУБЛИКОВАТЬ</button>
+        <input type="text" id="gt" placeholder="Название">
+        <textarea id="gd" placeholder="Описание проекта"></textarea>
+        <button class="btn" onclick="pub()">ОТПРАВИТЬ</button>
     </div>
 
-    <div class="card">
-        <h3>Лента игр</h3>
-        <div id="games-list"></div>
-    </div>
+    <div id="games-feed"></div>
 </div>
 
 <script>
@@ -51,38 +69,36 @@
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-    let currentNick = "";
+
+    // ПРОВЕРКА РЕЖИМА ОШИБКИ ДЛЯ ВСЕХ
+    db.ref('settings/maintenance').on('value', s => {
+        document.getElementById('error-mode').style.display = s.val() ? 'flex' : 'none';
+    });
 
     function login() {
-        const n = document.getElementById('nick-i').value.trim();
-        const p = document.getElementById('pass-i').value.trim();
-        if(!n || !p) return alert("Заполни всё!");
-
+        const n = document.getElementById('n-i').value.trim();
+        const p = document.getElementById('p-i').value.trim();
         db.ref('users/' + n).once('value', s => {
             if(s.val() && s.val().pass === p) {
-                currentNick = n;
                 document.getElementById('login-box').style.display = 'none';
                 document.getElementById('portal-ui').style.display = 'block';
-                document.getElementById('u-name').innerText = n;
-                loadData();
-            } else { alert("Ошибка входа!"); }
+                document.getElementById('user-display').innerText = n;
+                load();
+            } else { alert("Ошибка!"); }
         });
     }
 
-    function publishGame() {
-        const t = document.getElementById('g-title').value;
-        const d = document.getElementById('g-desc').value;
-        if(!t) return alert("Введи название!");
-        db.ref('games').push({ title: t, desc: d, author: currentNick });
-        alert("Опубликовано!");
+    function pub() {
+        const t = document.getElementById('gt').value;
+        const d = document.getElementById('gd').value;
+        if(t) db.ref('games').push({ title: t, desc: d, author: document.getElementById('user-display').innerText });
     }
 
-    function loadData() {
+    function load() {
         db.ref('games').on('value', s => {
-            const cont = document.getElementById('games-list');
-            cont.innerHTML = "";
+            const f = document.getElementById('games-feed'); f.innerHTML = "";
             if(s.val()) Object.values(s.val()).reverse().forEach(g => {
-                cont.innerHTML += `<div class="game-item"><b>${g.title}</b><br><small>Автор: ${g.author}</small><p>${g.desc || ''}</p></div>`;
+                f.innerHTML += `<div class="card"><b>${g.title}</b><br><small>Автор: ${g.author}</small><p>${g.desc}</p></div>`;
             });
         });
     }

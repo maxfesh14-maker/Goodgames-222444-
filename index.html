@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Good Games Portal | v13.5</title>
+    <title>Good Games Portal</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
@@ -28,7 +28,6 @@
 <body>
 
 <div id="screen-msg"></div>
-
 <div id="auth-box">
     <div class="auth-card" id="login-form">
         <h2 style="color:var(--main)">GOOD GAMES</h2>
@@ -64,77 +63,53 @@
     firebase.initializeApp(firebaseConfig); const db = firebase.database();
     let me = { nick: "", vip: false, verified: false };
 
-    if(localStorage.getItem('gg_hwid_ban')) showMsg("🚫 ДОСТУП ОГРАНИЧЕН (HWID BAN)", "var(--ban)");
-
+    if(localStorage.getItem('gg_hwid_ban')) showMsg("🚫 HWID BAN", "var(--ban)");
     function showMsg(t, c) { const s = document.getElementById('screen-msg'); s.style.display = 'flex'; s.innerHTML = `<h1 style="color:${c}">${t}</h1>`; }
-    db.ref('settings/maintenance').on('value', s => { if(s.val()) showMsg("⚠️ ТЕХНИЧЕСКИЕ РАБОТЫ", "var(--main)"); else if(!localStorage.getItem('gg_hwid_ban')) document.getElementById('screen-msg').style.display = 'none'; });
+    db.ref('settings/maintenance').on('value', s => { if(s.val()) showMsg("⚠️ ТЕХРАБОТЫ", "var(--main)"); else if(!localStorage.getItem('gg_hwid_ban')) document.getElementById('screen-msg').style.display = 'none'; });
 
     function showAuth(m) { document.getElementById('login-form').style.display = m=='login'?'block':'none'; document.getElementById('reg-form').style.display = m=='reg'?'block':'none'; }
-
     function register() {
         const n = document.getElementById('r-n').value.trim(); const p = document.getElementById('r-p').value.trim();
-        if(n.length < 3) return alert("Ник слишком короткий!");
-        db.ref('users/' + n).set({ pass: p, verified: false, vip: false, ban: false, status: 'offline' }).then(() => { alert("Аккаунт создан!"); showAuth('login'); });
+        db.ref('users/' + n).set({ pass: p, verified: false, vip: false, ban: false, status: 'offline' }).then(() => { showAuth('login'); });
     }
-
     function login() {
         const n = document.getElementById('l-n').value.trim(); const p = document.getElementById('l-p').value.trim();
         db.ref('users/' + n).once('value', s => {
             const d = s.val();
             if(d && d.pass === p) {
-                if(d.ban) return alert("Вы забанены!");
+                if(d.ban) return alert("БАН!");
                 if(d.hwid_ban) { localStorage.setItem('gg_hwid_ban','true'); location.reload(); return; }
                 me = { nick: n, verified: d.verified, vip: d.vip };
                 document.getElementById('auth-box').style.display = 'none'; document.getElementById('portal-ui').style.display = 'flex';
-                db.ref('users/'+n).update({ status: 'online' }); renderAdd(); loadGames(); renderProfile();
-            } else alert("Неверный ник или пароль!");
+                renderAdd(); loadGames(); renderProfile();
+            } else alert("Ошибка!");
         });
     }
-
     function loadGames() {
         db.ref('games').on('value', s => {
             const l = document.getElementById('games-list'); l.innerHTML = "";
             if(s.val()) Object.entries(s.val()).reverse().forEach(([id, g]) => {
                 if(g.type === 'vip' && !me.vip) {
-                    l.innerHTML += `<div class="card" style="opacity:0.6; filter:grayscale(1)"><b>🔒 ${g.title}</b><br><small>Только для VIP-игроков</small></div>`;
+                    l.innerHTML += `<div class="card" style="opacity:0.5"><b>🔒 VIP ИГРА</b></div>`;
                 } else {
-                    let tags = g.tags ? g.tags.split(' ').map(t => `<span class="tag">#${t}</span>`).join('') : '';
-                    l.innerHTML += `<div class="card">${g.type==='vip'?'<span class="vip-badge">VIP</span>':''}
-                    <b>${g.title} ${g.v?'✔':''}</b><br><small>Автор: ${g.author}</small><br>${tags}
-                    <button class="btn" style="background:#4CAF50;color:white" onclick="window.open('${g.url}')">ИГРАТЬ</button></div>`;
+                    let rH = ''; if(g.reviews) Object.entries(g.reviews).forEach(([rid, r]) => { rH += `<div style="font-size:11px;color:#777"><b>${r.user}:</b> ${r.text}</div>`; });
+                    l.innerHTML += `<div class="card"><b>${g.title}</b><br><button class="btn" style="background:#4CAF50;color:#fff" onclick="window.open('${g.url}')">ИГРАТЬ</button>
+                    <div style="margin-top:5px;border-top:1px solid #333">${rH}<input id="ri-${id}" placeholder="Отзыв..."><button class="btn" style="padding:5px" onclick="addR('${id}')">ОК</button></div></div>`;
                 }
             });
         });
     }
-
+    function addR(id) { const t = document.getElementById('ri-'+id).value; if(t) db.ref('games/'+id+'/reviews').push({user:me.nick,text:t}); }
     function renderAdd() {
         const c = document.getElementById('add-content');
-        if(me.verified || me.vip) {
-            c.innerHTML = `<div class="card">
-                <input id="gt" placeholder="Название игры">
-                <input id="gl" placeholder="Ссылка на игру">
-                <input id="gh" placeholder="Теги (через пробел)">
-                <select id="gtype">
-                    <option value="normal">Для всех</option>
-                    ${me.vip ? '<option value="vip">Для VIP</option>' : ''}
-                </select>
-                <button class="btn" onclick="send()">ОПУБЛИКОВАТЬ</button>
-            </div>`;
-        } else c.innerHTML = `<p style="text-align:center">Публикация доступна авторам с ✔ или VIP.</p>`;
+        if(me.verified || me.vip) c.innerHTML = `<div class="card"><input id="gt" placeholder="Название"><input id="gl" placeholder="Ссылка"><input id="gh" placeholder="Теги"><select id="gtype"><option value="normal">Обычная</option>${me.vip?'<option value="vip">VIP</option>':''}</select><button class="btn" onclick="send()">ОТПРАВИТЬ</button></div>`;
     }
-
-    function send() {
+    function send() { 
         const t = document.getElementById('gt').value; const l = document.getElementById('gl').value;
-        const h = document.getElementById('gh').value; const ty = document.getElementById('gtype').value;
-        if(t && l) { db.ref('games').push({title:t, url:l, tags:h, type:ty, author:me.nick, v:me.verified}); tab('games', document.querySelectorAll('.nav-btn')[0]); }
+        if(t && l) db.ref('games').push({title:t, url:l, tags:document.getElementById('gh').value, type:document.getElementById('gtype').value, author:me.nick, v:me.verified});
     }
-
-    function tab(id, el) { 
-        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById('p-' + id).classList.add('active'); el.classList.add('active');
-    }
-    function renderProfile() { document.getElementById('profile-info').innerHTML = `<h3>${me.nick} ${me.vip?'👑':''}</h3><p>${me.vip?'Статус: VIP Игрок':'Статус: Игрок'}</p>`; }
+    function tab(id, el) { document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); document.getElementById('p-' + id).classList.add('active'); }
+    function renderProfile() { document.getElementById('profile-info').innerHTML = `<h3>${me.nick}</h3>`; }
 </script>
 </body>
 </html>

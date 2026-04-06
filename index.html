@@ -3,205 +3,178 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Good Games Portal</title>
+    <title>GG ADMIN TITAN</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
-        :root { --main: #FBC02D; --bg: #000; --card: #111; --text: #fff; --nav: #151515; --online: #4CAF50; --vip: #FFD700; --ban: #ff4444; }
-        body { background: var(--bg); color: var(--text); font-family: sans-serif; margin: 0; overflow: hidden; height: 100vh; }
-        #screen-msg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 10000; text-align: center; padding: 20px; }
-        #auth-box { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 5000; }
-        .auth-card { width: 85%; max-width: 320px; text-align: center; }
-        input, textarea, select { width: 100%; padding: 12px; margin: 8px 0; background: #222; border: 1px solid #444; color: #fff; border-radius: 8px; box-sizing: border-box; font-size: 16px; outline: none; }
-        .btn { background: var(--main); color: #000; font-weight: bold; border: none; padding: 12px; border-radius: 8px; cursor: pointer; width: 100%; margin: 5px 0; }
-        #portal-ui { display: none; height: 100vh; flex-direction: column; }
-        .content-area { flex: 1; overflow-y: auto; padding: 15px; padding-bottom: 90px; }
-        .page { display: none; } .page.active { display: block; }
-        .nav-bar { position: fixed; bottom: 0; left: 0; width: 100%; height: 70px; background: var(--nav); border-top: 1px solid #333; display: flex; justify-content: space-around; align-items: center; }
-        .nav-btn { color: #666; text-align: center; font-size: 11px; cursor: pointer; flex: 1; }
-        .nav-btn.active { color: var(--main); }
-        .card { background: var(--card); padding: 15px; border-radius: 12px; border: 1px solid #222; margin-bottom: 15px; position: relative; }
-        .friend-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #1a1a1a; margin-bottom: 5px; border-radius: 8px; border-left: 3px solid var(--main); }
-        #search-results { margin-top: 10px; }
+        :root { --main: #FBC02D; --bg: #050505; --card: #121212; --text: #eee; --red: #ff4444; --green: #4CAF50; --blue: #2196F3; }
+        
+        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; line-height: 1.6; }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        h1 { color: var(--main); text-align: center; font-size: 28px; text-transform: uppercase; letter-spacing: 2px; }
+        h2 { color: #888; font-size: 18px; border-left: 4px solid var(--main); padding-left: 10px; margin-top: 30px; }
+
+        .container { max-width: 900px; margin: 0 auto; }
+
+        /* ПОИСК */
+        #user-search { 
+            width: 100%; padding: 15px; background: #1a1a1a; border: 1px solid #333; 
+            color: #fff; border-radius: 10px; font-size: 16px; margin-bottom: 20px; outline: none;
+            transition: 0.3s;
+        }
+        #user-search:focus { border-color: var(--main); box-shadow: 0 0 10px rgba(251, 192, 45, 0.2); }
+
+        /* КАРТОЧКИ */
+        .card { 
+            background: var(--card); padding: 20px; border-radius: 15px; border: 1px solid #222; 
+            margin-bottom: 15px; animation: slideIn 0.4s ease forwards; position: relative;
+            transition: 0.3s;
+        }
+        .card:hover { border-color: #444; background: #161616; }
+
+        /* КНОПКИ */
+        .btn-group { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 15px; }
+        .btn { 
+            padding: 10px 16px; border: none; border-radius: 8px; cursor: pointer; 
+            font-weight: bold; font-size: 12px; transition: 0.2s; text-transform: uppercase;
+        }
+        .btn:active { transform: scale(0.95); }
+        
+        .btn-vip { background: var(--main); color: #000; }
+        .btn-ver { background: var(--blue); color: #fff; }
+        .btn-ban { background: var(--red); color: #fff; }
+        .btn-unban { background: #444; color: #fff; }
+        .btn-del { background: #222; color: #888; border: 1px solid #333; }
+        .btn-pub { background: var(--green); color: #fff; width: 100%; font-size: 16px; margin-top: 10px; }
+
+        /* ИНФО */
+        .info { font-size: 13px; color: #999; margin: 5px 0; }
+        .info b { color: #fff; }
+        .dev-id { font-family: monospace; color: var(--main); background: #222; padding: 2px 6px; border-radius: 4px; font-size: 11px; }
+        
+        .badge { font-size: 10px; padding: 3px 8px; border-radius: 5px; font-weight: bold; margin-left: 5px; }
+        .badge-ban { background: var(--red); color: #fff; }
+        .badge-vip { background: var(--main); color: #000; }
+
+        input[type="text"], select { 
+            background: #111; border: 1px solid #333; color: #fff; padding: 12px; 
+            border-radius: 8px; width: 100%; margin: 5px 0; box-sizing: border-box;
+        }
     </style>
 </head>
 <body>
 
-<div id="screen-msg"></div>
+<div class="container">
+    <h1>Titan Admin V4</h1>
 
-<div id="auth-box">
-    <div class="auth-card" id="login-form">
-        <h2 style="color:var(--main)">GOOD GAMES</h2>
-        <input type="text" id="l-n" placeholder="Ник">
-        <input type="password" id="l-p" placeholder="Пароль">
-        <button class="btn" onclick="login()">ВОЙТИ</button>
-        <button class="btn" style="background:#333; color:#fff" onclick="showAuth('reg')">РЕГИСТРАЦИЯ</button>
-    </div>
-    <div class="auth-card" id="reg-form" style="display:none">
-        <h2 style="color:var(--main)">РЕГИСТРАЦИЯ</h2>
-        <input type="text" id="r-n" placeholder="Ник">
-        <input type="password" id="r-p" placeholder="Пароль">
-        <button class="btn" onclick="register()">СОЗДАТЬ</button>
-        <button class="btn" style="background:#333; color:#fff" onclick="showAuth('login')">НАЗАД</button>
-    </div>
-</div>
-
-<div id="portal-ui">
-    <div class="content-area">
-        <div id="p-games" class="page active"><h2 style="color:var(--main)">🎮 ИГРЫ</h2><div id="games-list"></div></div>
-        <div id="p-add" class="page"><h2 style="color:var(--main)">➕ СОЗДАТЬ</h2><div id="add-content"></div></div>
-        <div id="p-user" class="page">
-            <h2 style="color:var(--main)">👤 ПРОФИЛЬ</h2>
-            <div class="card" id="profile-info"></div>
-            
-            <h3 style="color:var(--main)">🔍 ПОИСК ИГРОКОВ</h3>
-            <div class="card">
-                <input type="text" id="user-search-input" placeholder="Введите ник игрока..." oninput="searchUsers()">
-                <div id="search-results"></div>
-            </div>
-
-            <h3 style="color:var(--main)">🤝 МОИ ДРУЗЬЯ</h3>
-            <div id="friends-list"></div>
+    <div class="section">
+        <h2>🚀 БЫСТРАЯ ПУБЛИКАЦИЯ</h2>
+        <div class="card">
+            <input type="text" id="g_t" placeholder="Название игры">
+            <input type="text" id="g_u" placeholder="URL-ссылка (https://...)">
+            <select id="g_v">
+                <option value="normal">ОБЫЧНАЯ ИГРА</option>
+                <option value="vip">VIP ЭКСКЛЮЗИВ</option>
+            </select>
+            <button class="btn btn-pub" onclick="publish()">ОПУБЛИКОВАТЬ НА ПОРТАЛ</button>
         </div>
     </div>
-    <div class="nav-bar">
-        <div class="nav-btn active" onclick="tab('games', this)">🎮<br>Игры</div>
-        <div class="nav-btn" onclick="tab('add', this)">➕<br>Создать</div>
-        <div class="nav-btn" onclick="tab('user', this)">👤<br>Профиль</div>
+
+    <div class="section">
+        <h2>👥 УПРАВЛЕНИЕ ПОЛЬЗОВАТЕЛЯМИ</h2>
+        <input type="text" id="user-search" placeholder="Поиск по нику или ID..." oninput="render()">
+        <div id="u_list">Загрузка базы данных...</div>
     </div>
 </div>
 
 <script>
+    // Твой конфиг Firebase
     const firebaseConfig = { apiKey: "AIzaSyCD1HEwz_NsJDasETxc6X4IdCJ6_WFj-LA", databaseURL: "https://goodgames-222444-default-rtdb.firebaseio.com" };
-    firebase.initializeApp(firebaseConfig); const db = firebase.database();
-    let me = { nick: "", vip: false, verified: false, friends: {} };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
 
-    function getDeviceID() {
-        const info = [navigator.userAgent, screen.width, screen.height].join('|');
-        let hash = 0;
-        for (let i = 0; i < info.length; i++) { hash = ((hash << 5) - hash) + info.charCodeAt(i); hash |= 0; }
-        return "DEV-" + Math.abs(hash);
-    }
-    const myDeviceID = getDeviceID();
+    let usersData = {};
 
-    function showMsg(t, c) { const s = document.getElementById('screen-msg'); s.style.display = 'flex'; s.innerHTML = `<h1 style="color:${c}">${t}</h1>`; }
-    
-    function showAuth(m) { document.getElementById('login-form').style.display = m=='login'?'block':'none'; document.getElementById('reg-form').style.display = m=='reg'?'block':'none'; }
+    // Загрузка данных
+    db.ref('users').on('value', s => {
+        usersData = s.val() || {};
+        render();
+    });
 
-    function register() {
-        const n = document.getElementById('r-n').value.trim(); const p = document.getElementById('r-p').value.trim();
-        if(!n || !p) return;
-        db.ref('users/' + n).set({ pass: p, verified: false, vip: false, ban: false, deviceID: myDeviceID }).then(() => { showAuth('login'); });
-    }
+    function render() {
+        const list = document.getElementById('u_list');
+        const q = document.getElementById('user-search').value.toLowerCase();
+        list.innerHTML = "";
 
-    function login() {
-        const n = document.getElementById('l-n').value.trim(); const p = document.getElementById('l-p').value.trim();
-        db.ref('users/' + n).once('value', s => {
-            const d = s.val();
-            if(d && d.pass === p) {
-                if(d.ban || d.deviceID_ban === myDeviceID) return showMsg("🚫 BAN", "var(--ban)");
-                me = { nick: n, verified: d.verified, vip: d.vip, friends: d.friends || {} };
-                document.getElementById('auth-box').style.display = 'none'; document.getElementById('portal-ui').style.display = 'flex';
-                renderAdd(); loadGames(); renderProfile(); loadFriends();
-            } else alert("Ошибка!");
-        });
-    }
-
-    // ПОИСК ЛЮДЕЙ
-    function searchUsers() {
-        const query = document.getElementById('user-search-input').value.trim().toLowerCase();
-        const resultsBox = document.getElementById('search-results');
-        if(query.length < 2) { resultsBox.innerHTML = ""; return; }
-
-        db.ref('users').once('value', s => {
-            resultsBox.innerHTML = "";
-            s.forEach(child => {
-                const username = child.key;
-                if(username.toLowerCase().includes(query) && username !== me.nick) {
-                    const isFriend = me.friends && me.friends[username];
-                    resultsBox.innerHTML += `
-                        <div class="friend-item">
-                            <span>👤 ${username}</span>
-                            ${isFriend ? '<span style="color:var(--online)">Уже друг</span>' : 
-                            `<button class="btn" style="width:auto; padding:5px 10px; font-size:12px" onclick="addFriend('${username}')">Добавить</button>`}
-                        </div>`;
-                }
-            });
-        });
-    }
-
-    function addFriend(target) {
-        db.ref('users/' + target + '/requests/' + me.nick).set(true);
-        alert("Запрос отправлен " + target);
-    }
-
-    function loadFriends() {
-        db.ref('users/' + me.nick + '/friends').on('value', s => {
-            const fList = document.getElementById('friends-list');
-            fList.innerHTML = "";
-            if(!s.val()) fList.innerHTML = "<div class='card'>У вас пока нет друзей. Попробуйте найти их через поиск выше!</div>";
-            else {
-                me.friends = s.val();
-                Object.keys(s.val()).forEach(name => {
-                    fList.innerHTML += `<div class="friend-item"><span>👤 ${name}</span><span style="color:var(--online)">●</span></div>`;
-                });
-            }
-        });
-
-        db.ref('users/' + me.nick + '/requests').on('value', s => {
-            if(s.val()) {
-                Object.keys(s.val()).forEach(name => {
-                    if(confirm("Игрок " + name + " хочет дружить! Принять?")) {
-                        db.ref('users/' + me.nick + '/friends/' + name).set(true);
-                        db.ref('users/' + name + '/friends/' + me.nick).set(true);
-                    }
-                    db.ref('users/' + me.nick + '/requests/' + name).remove();
-                });
+        Object.entries(usersData).forEach(([nick, u]) => {
+            if(nick.toLowerCase().includes(q) || (u.deviceID && u.deviceID.toLowerCase().includes(q))) {
+                const isBanned = u.ban || u.deviceID_ban;
+                const fCount = u.friends ? Object.keys(u.friends).length : 0;
+                
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; align-items:center">
+                        <span style="font-size:20px; font-weight:bold">${nick} 
+                            ${u.vip ? '<span class="badge badge-vip">VIP</span>' : ''}
+                            ${isBanned ? '<span class="badge badge-ban">BANNED</span>' : ''}
+                        </span>
+                        <span class="info">Друзей: <b>${fCount}</b></span>
+                    </div>
+                    
+                    <div class="info">Ключ: <b style="color:var(--green)">${u.pass}</b></div>
+                    <div class="info">DeviceID: <span class="dev-id">${u.deviceID || 'N/A'}</span></div>
+                    
+                    <div class="btn-group">
+                        <button class="btn btn-vip" onclick="upd('${nick}', 'vip', ${!u.vip})">${u.vip?'Снять VIP':'Дать VIP'}</button>
+                        <button class="btn btn-ver" onclick="upd('${nick}', 'verified', ${!u.verified})">Verify</button>
+                        
+                        ${isBanned ? 
+                            `<button class="btn btn-unban" onclick="unban('${nick}')">🔓 UNBAN DEVICE</button>` : 
+                            `<button class="btn btn-ban" onclick="ban('${nick}', '${u.deviceID}')">🚫 BAN DEVICE</button>`
+                        }
+                        
+                        <button class="btn btn-del" onclick="del('users/${nick}')">Удалить</button>
+                    </div>
+                `;
+                list.appendChild(card);
             }
         });
     }
 
-    function loadGames() {
-        db.ref('games').on('value', s => {
-            const l = document.getElementById('games-list'); l.innerHTML = "";
-            if(s.val()) Object.entries(s.val()).reverse().forEach(([id, g]) => {
-                const card = document.createElement('div'); card.className = 'card';
-                card.innerHTML = `<b>${g.title}</b><br><small>Автор: ${g.author || 'Анон'}</small>
-                <button class="btn" style="background:#4CAF50;color:#fff" onclick="window.open('${g.url}')">ИГРАТЬ</button>
-                <div style="margin-top:5px; border-top:1px solid #333">
-                <input id="ri-${id}" placeholder="Отзыв..." style="font-size:12px"><button class="btn" style="padding:5px" onclick="addR('${id}')">ОК</button></div>`;
-                l.appendChild(card);
-            });
-        });
-    }
+    // Функции управления
+    function upd(n, f, v) { db.ref('users/' + n).update({ [f]: v }); }
 
-    function addR(id) { 
-        const inp = document.getElementById('ri-'+id);
-        if(inp.value.trim()) {
-            db.ref('games/'+id+'/reviews').push({user:me.nick, text:inp.value});
-            inp.value = "";
+    function ban(n, id) {
+        if(confirm("Забанить устройство " + n + "?")) {
+            db.ref('users/' + n).update({ ban: true, deviceID_ban: id || "unknown" });
         }
     }
 
-    function renderAdd() {
-        const c = document.getElementById('add-content');
-        if(me.verified || me.vip) c.innerHTML = `<div class="card"><input id="gt" placeholder="Название"><input id="gl" placeholder="Ссылка"><button class="btn" onclick="send()">ОТПРАВИТЬ</button></div>`;
-        else c.innerHTML = `<div class="card">Только проверенные пользователи могут публиковать игры.</div>`;
+    function unban(n) {
+        if(confirm("Разбанить " + n + "?")) {
+            db.ref('users/' + n).update({ ban: false, deviceID_ban: null });
+        }
     }
 
-    function send() {
-        const t = document.getElementById('gt').value; const l = document.getElementById('gl').value;
-        if(t && l) db.ref('games').push({title:t, url:l, author:me.nick}).then(() => { alert("Опубликовано!"); document.getElementById('gt').value=""; document.getElementById('gl').value=""; });
+    function del(path) {
+        if(confirm("Удалить навсегда?")) db.ref(path).remove();
     }
 
-    function tab(id, el) { 
-        document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); 
-        document.getElementById('p-' + id).classList.add('active'); 
-        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-        if(el) el.classList.add('active');
+    function publish() {
+        const t = document.getElementById('g_t').value;
+        const u = document.getElementById('g_u').value;
+        const v = document.getElementById('g_v').value;
+        if(t && u) {
+            db.ref('games').push({ title: t, url: u, type: v, author: "ADMIN" })
+            .then(() => { alert("Игра добавлена!"); document.getElementById('g_t').value=""; document.getElementById('g_u').value=""; });
+        }
     }
-
-    function renderProfile() { document.getElementById('profile-info').innerHTML = `<h3>${me.nick}</h3><p style="color:var(--main)">ID: ${myDeviceID}</p>`; }
 </script>
 </body>
 </html>

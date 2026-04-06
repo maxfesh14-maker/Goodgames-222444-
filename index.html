@@ -9,33 +9,20 @@
     <style>
         :root { --main: #FBC02D; --bg: #000; --card: #111; --text: #fff; --nav: #151515; --online: #4CAF50; --vip: #FFD700; --ban: #ff4444; }
         body { background: var(--bg); color: var(--text); font-family: sans-serif; margin: 0; overflow: hidden; height: 100vh; }
-        
         #screen-msg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 10000; text-align: center; padding: 20px; }
-        
         #auth-box { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 5000; }
         .auth-card { width: 85%; max-width: 320px; text-align: center; }
-        
         input, textarea, select { width: 100%; padding: 12px; margin: 8px 0; background: #222; border: 1px solid #444; color: #fff; border-radius: 8px; box-sizing: border-box; font-size: 16px; outline: none; }
-        input:focus { border-color: var(--main); }
-        
-        .btn { background: var(--main); color: #000; font-weight: bold; border: none; padding: 12px; border-radius: 8px; cursor: pointer; width: 100%; margin: 5px 0; transition: 0.2s; }
-        .btn:active { transform: scale(0.98); }
-        
+        .btn { background: var(--main); color: #000; font-weight: bold; border: none; padding: 12px; border-radius: 8px; cursor: pointer; width: 100%; margin: 5px 0; }
         #portal-ui { display: none; height: 100vh; flex-direction: column; }
         .content-area { flex: 1; overflow-y: auto; padding: 15px; padding-bottom: 90px; }
-        
-        .page { display: none; } 
-        .page.active { display: block; }
-        
-        .nav-bar { position: fixed; bottom: 0; left: 0; width: 100%; height: 70px; background: var(--nav); border-top: 1px solid #333; display: flex; justify-content: space-around; align-items: center; z-index: 1000; }
-        .nav-btn { color: #666; text-align: center; font-size: 11px; cursor: pointer; flex: 1; transition: 0.3s; }
-        .nav-btn.active { color: var(--main); font-weight: bold; }
-        
+        .page { display: none; } .page.active { display: block; }
+        .nav-bar { position: fixed; bottom: 0; left: 0; width: 100%; height: 70px; background: var(--nav); border-top: 1px solid #333; display: flex; justify-content: space-around; align-items: center; }
+        .nav-btn { color: #666; text-align: center; font-size: 11px; cursor: pointer; flex: 1; }
+        .nav-btn.active { color: var(--main); }
         .card { background: var(--card); padding: 15px; border-radius: 12px; border: 1px solid #222; margin-bottom: 15px; position: relative; }
-        .vip-badge { background: var(--vip); color: #000; font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: bold; position: absolute; top: 10px; right: 10px; }
-        
-        .friend-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #1a1a1a; margin-bottom: 5px; border-radius: 8px; }
-        .rev-item { font-size: 11px; color: #aaa; margin-top: 4px; border-bottom: 1px solid #222; padding-bottom: 2px; }
+        .friend-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #1a1a1a; margin-bottom: 5px; border-radius: 8px; border-left: 3px solid var(--main); }
+        #search-results { margin-top: 10px; }
     </style>
 </head>
 <body>
@@ -54,31 +41,29 @@
         <h2 style="color:var(--main)">РЕГИСТРАЦИЯ</h2>
         <input type="text" id="r-n" placeholder="Ник">
         <input type="password" id="r-p" placeholder="Пароль">
-        <button class="btn" onclick="register()">СОЗДАТЬ АККАУНТ</button>
+        <button class="btn" onclick="register()">СОЗДАТЬ</button>
         <button class="btn" style="background:#333; color:#fff" onclick="showAuth('login')">НАЗАД</button>
     </div>
 </div>
 
 <div id="portal-ui">
     <div class="content-area">
-        <div id="p-games" class="page active">
-            <h2 style="color:var(--main)">🎮 ИГРЫ</h2>
-            <div id="games-list">Загрузка...</div>
-        </div>
-        
-        <div id="p-add" class="page">
-            <h2 style="color:var(--main)">➕ СОЗДАТЬ</h2>
-            <div id="add-content"></div>
-        </div>
-        
+        <div id="p-games" class="page active"><h2 style="color:var(--main)">🎮 ИГРЫ</h2><div id="games-list"></div></div>
+        <div id="p-add" class="page"><h2 style="color:var(--main)">➕ СОЗДАТЬ</h2><div id="add-content"></div></div>
         <div id="p-user" class="page">
             <h2 style="color:var(--main)">👤 ПРОФИЛЬ</h2>
             <div class="card" id="profile-info"></div>
-            <h3 style="color:var(--main)">🤝 ДРУЗЬЯ</h3>
+            
+            <h3 style="color:var(--main)">🔍 ПОИСК ИГРОКОВ</h3>
+            <div class="card">
+                <input type="text" id="user-search-input" placeholder="Введите ник игрока..." oninput="searchUsers()">
+                <div id="search-results"></div>
+            </div>
+
+            <h3 style="color:var(--main)">🤝 МОИ ДРУЗЬЯ</h3>
             <div id="friends-list"></div>
         </div>
     </div>
-
     <div class="nav-bar">
         <div class="nav-btn active" onclick="tab('games', this)">🎮<br>Игры</div>
         <div class="nav-btn" onclick="tab('add', this)">➕<br>Создать</div>
@@ -88,222 +73,85 @@
 
 <script>
     const firebaseConfig = { apiKey: "AIzaSyCD1HEwz_NsJDasETxc6X4IdCJ6_WFj-LA", databaseURL: "https://goodgames-222444-default-rtdb.firebaseio.com" };
-    firebase.initializeApp(firebaseConfig); 
-    const db = firebase.database();
-    
-    let me = { nick: "", vip: false, verified: false };
+    firebase.initializeApp(firebaseConfig); const db = firebase.database();
+    let me = { nick: "", vip: false, verified: false, friends: {} };
 
-    // --- СИСТЕМА ДЕВАЙС ID (Замена IMEI) ---
     function getDeviceID() {
-        const info = [navigator.userAgent, screen.width, screen.height, navigator.language].join('|');
+        const info = [navigator.userAgent, screen.width, screen.height].join('|');
         let hash = 0;
         for (let i = 0; i < info.length; i++) { hash = ((hash << 5) - hash) + info.charCodeAt(i); hash |= 0; }
         return "DEV-" + Math.abs(hash);
     }
     const myDeviceID = getDeviceID();
 
-    // Проверка банов
-    if(localStorage.getItem('gg_hwid_ban')) showMsg("🚫 УСТРОЙСТВО ЗАБЛОКИРОВАНО", "var(--ban)");
+    function showMsg(t, c) { const s = document.getElementById('screen-msg'); s.style.display = 'flex'; s.innerHTML = `<h1 style="color:${c}">${t}</h1>`; }
     
-    function showMsg(t, c) { 
-        const s = document.getElementById('screen-msg'); 
-        s.style.display = 'flex'; 
-        s.innerHTML = `<h1 style="color:${c}">${t}</h1>`; 
-    }
-
-    db.ref('settings/maintenance').on('value', s => { 
-        if(s.val()) showMsg("⚠️ ТЕХРАБОТЫ", "var(--main)"); 
-        else if(!localStorage.getItem('gg_hwid_ban')) document.getElementById('screen-msg').style.display = 'none'; 
-    });
-
-    function showAuth(m) { 
-        document.getElementById('login-form').style.display = m=='login'?'block':'none'; 
-        document.getElementById('reg-form').style.display = m=='reg'?'block':'none'; 
-    }
+    function showAuth(m) { document.getElementById('login-form').style.display = m=='login'?'block':'none'; document.getElementById('reg-form').style.display = m=='reg'?'block':'none'; }
 
     function register() {
-        const n = document.getElementById('r-n').value.trim(); 
-        const p = document.getElementById('r-p').value.trim();
-        if(!n || !p) return alert("Заполни поля!");
-        
-        db.ref('users/' + n).once('value', s => {
-            if(s.exists()) return alert("Ник занят!");
-            db.ref('users/' + n).set({ 
-                pass: p, verified: false, vip: false, ban: false, 
-                deviceID: myDeviceID, regDate: new Date().toLocaleDateString()
-            }).then(() => { alert("Аккаунт создан!"); showAuth('login'); });
-        });
+        const n = document.getElementById('r-n').value.trim(); const p = document.getElementById('r-p').value.trim();
+        if(!n || !p) return;
+        db.ref('users/' + n).set({ pass: p, verified: false, vip: false, ban: false, deviceID: myDeviceID }).then(() => { showAuth('login'); });
     }
 
     function login() {
-        const n = document.getElementById('l-n').value.trim(); 
-        const p = document.getElementById('l-p').value.trim();
+        const n = document.getElementById('l-n').value.trim(); const p = document.getElementById('l-p').value.trim();
         db.ref('users/' + n).once('value', s => {
             const d = s.val();
             if(d && d.pass === p) {
-                if(d.ban || d.deviceID_ban === myDeviceID) {
-                    localStorage.setItem('gg_hwid_ban','true');
-                    return showMsg("🚫 БАН", "var(--ban)");
-                }
-                me = { nick: n, verified: d.verified, vip: d.vip };
-                db.ref('users/' + n).update({ lastLoginDevice: myDeviceID, status: 'online' });
-                
-                document.getElementById('auth-box').style.display = 'none'; 
-                document.getElementById('portal-ui').style.display = 'flex';
-                
+                if(d.ban || d.deviceID_ban === myDeviceID) return showMsg("🚫 BAN", "var(--ban)");
+                me = { nick: n, verified: d.verified, vip: d.vip, friends: d.friends || {} };
+                document.getElementById('auth-box').style.display = 'none'; document.getElementById('portal-ui').style.display = 'flex';
                 renderAdd(); loadGames(); renderProfile(); loadFriends();
-            } else alert("Ошибка входа!");
+            } else alert("Ошибка!");
         });
     }
 
-    function loadGames() {
-        db.ref('games').on('value', s => {
-            const container = document.getElementById('games-list');
-            container.innerHTML = "";
-            if(!s.val()) return container.innerHTML = "Игр пока нет...";
+    // ПОИСК ЛЮДЕЙ
+    function searchUsers() {
+        const query = document.getElementById('user-search-input').value.trim().toLowerCase();
+        const resultsBox = document.getElementById('search-results');
+        if(query.length < 2) { resultsBox.innerHTML = ""; return; }
 
-            Object.entries(s.val()).reverse().forEach(([id, g]) => {
-                const card = document.createElement('div');
-                card.className = 'card';
-
-                // Пункт D от Copilot: Защита textContent
-                const title = document.createElement('b');
-                title.textContent = g.title;
-                card.appendChild(title);
-
-                const info = document.createElement('div');
-                info.style.fontSize = '12px'; info.style.color = 'var(--main)';
-                info.textContent = `Автор: ${g.author || 'Анон'}`;
-                card.appendChild(info);
-
-                const playBtn = document.createElement('button');
-                playBtn.className = 'btn'; playBtn.style.background = '#4CAF50'; playBtn.style.color = '#fff';
-                playBtn.textContent = (g.type === 'vip' && !me.vip) ? '🔒 ТОЛЬКО ДЛЯ VIP' : 'ИГРАТЬ';
-                playBtn.onclick = () => {
-                    if(g.type === 'vip' && !me.vip) alert("Нужен VIP статус!");
-                    else window.open(g.url);
-                };
-                card.appendChild(playBtn);
-
-                // Кнопка дружбы
-                if(g.author && g.author !== me.nick) {
-                    const fBtn = document.createElement('button');
-                    fBtn.className = 'btn'; fBtn.style.background = '#333'; fBtn.style.color = '#fff'; fBtn.style.fontSize = '12px';
-                    fBtn.textContent = '+ Добавить автора в друзья';
-                    fBtn.onclick = () => addFriend(g.author);
-                    card.appendChild(fBtn);
+        db.ref('users').once('value', s => {
+            resultsBox.innerHTML = "";
+            s.forEach(child => {
+                const username = child.key;
+                if(username.toLowerCase().includes(query) && username !== me.nick) {
+                    const isFriend = me.friends && me.friends[username];
+                    resultsBox.innerHTML += `
+                        <div class="friend-item">
+                            <span>👤 ${username}</span>
+                            ${isFriend ? '<span style="color:var(--online)">Уже друг</span>' : 
+                            `<button class="btn" style="width:auto; padding:5px 10px; font-size:12px" onclick="addFriend('${username}')">Добавить</button>`}
+                        </div>`;
                 }
-
-                // Отзывы
-                const revBox = document.createElement('div');
-                revBox.style.marginTop = '10px'; revBox.style.borderTop = '1px solid #333';
-                if(g.reviews) {
-                    Object.values(g.reviews).slice(-3).forEach(r => {
-                        const rd = document.createElement('div');
-                        rd.className = 'rev-item';
-                        rd.innerHTML = `<b>${r.user}:</b> ${r.text}`;
-                        revBox.appendChild(rd);
-                    });
-                }
-
-                const rInp = document.createElement('input');
-                rInp.id = 'ri-' + id; rInp.placeholder = 'Написать отзыв...';
-                rInp.style.fontSize = '12px';
-                revBox.appendChild(rInp);
-
-                const rBtn = document.createElement('button');
-                rBtn.className = 'btn'; rBtn.style.padding = '5px'; rBtn.textContent = 'ОК';
-                rBtn.onclick = () => addReview(id);
-                revBox.appendChild(rBtn);
-
-                card.appendChild(revBox);
-                container.appendChild(card);
             });
         });
     }
 
-    function addReview(id) {
-        const inp = document.getElementById('ri-' + id);
-        const val = inp.value.trim();
-        if(val) {
-            db.ref('games/' + id + '/reviews').push({ user: me.nick, text: val });
-            inp.value = ""; // Очистка поля
-        }
-    }
-
-    function renderAdd() {
-        const c = document.getElementById('add-content');
-        if(me.verified || me.vip) {
-            c.innerHTML = `
-            <div class="card">
-                <input id="gt" placeholder="Название игры">
-                <input id="gl" placeholder="Ссылка (https://...)">
-                <input id="gh" placeholder="Теги">
-                <select id="gtype">
-                    <option value="normal">Обычная</option>
-                    ${me.vip ? '<option value="vip">VIP Игра</option>' : ''}
-                </select>
-                <button class="btn" onclick="sendGame()">ОПУБЛИКОВАТЬ</button>
-            </div>`;
-        } else {
-            c.innerHTML = `<div class="card" style="text-align:center">Публикация доступна только проверенным пользователям.</div>`;
-        }
-    }
-
-    function sendGame() {
-        const t = document.getElementById('gt').value;
-        const l = document.getElementById('gl').value;
-        if(t && l) {
-            db.ref('games').push({
-                title: t, url: l, author: me.nick,
-                tags: document.getElementById('gh').value,
-                type: document.getElementById('gtype').value
-            }).then(() => {
-                alert("Отправлено!");
-                document.getElementById('gt').value = ""; document.getElementById('gl').value = "";
-            });
-        }
-    }
-
-    // Пункт A от Copilot: Исправленная навигация
-    function tab(id, el) { 
-        document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); 
-        document.getElementById('p-' + id).classList.add('active'); 
-        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-        if(el) el.classList.add('active');
-    }
-
-    function renderProfile() { 
-        document.getElementById('profile-info').innerHTML = `
-            <h2 style="margin:0">${me.nick}</h2>
-            <p style="color:var(--main)">${me.vip ? '👑 VIP СТАТУС' : 'Игрок'}</p>
-            <small style="color:#555">Device ID: ${myDeviceID}</small>
-        `; 
-    }
-
-    // --- ЛОГИКА ДРУЗЕЙ ---
     function addFriend(target) {
-        if(confirm("Отправить запрос в друзья игроку " + target + "?")) {
-            db.ref('users/' + target + '/requests/' + me.nick).set(true);
-            alert("Запрос отправлен!");
-        }
+        db.ref('users/' + target + '/requests/' + me.nick).set(true);
+        alert("Запрос отправлен " + target);
     }
 
     function loadFriends() {
-        const fList = document.getElementById('friends-list');
-        // Мои друзья
         db.ref('users/' + me.nick + '/friends').on('value', s => {
+            const fList = document.getElementById('friends-list');
             fList.innerHTML = "";
-            if(!s.val()) fList.innerHTML = `<div class="card">Список друзей пуст</div>`;
-            else Object.keys(s.val()).forEach(name => {
-                fList.innerHTML += `<div class="friend-item"><span>👤 ${name}</span><span style="color:var(--online)">Онлайн</span></div>`;
-            });
+            if(!s.val()) fList.innerHTML = "<div class='card'>У вас пока нет друзей. Попробуйте найти их через поиск выше!</div>";
+            else {
+                me.friends = s.val();
+                Object.keys(s.val()).forEach(name => {
+                    fList.innerHTML += `<div class="friend-item"><span>👤 ${name}</span><span style="color:var(--online)">●</span></div>`;
+                });
+            }
         });
-        // Запросы в друзья (всплывающее окно при входе в Профиль)
+
         db.ref('users/' + me.nick + '/requests').on('value', s => {
             if(s.val()) {
                 Object.keys(s.val()).forEach(name => {
-                    if(confirm("Игрок " + name + " хочет в друзья! Принять?")) {
+                    if(confirm("Игрок " + name + " хочет дружить! Принять?")) {
                         db.ref('users/' + me.nick + '/friends/' + name).set(true);
                         db.ref('users/' + name + '/friends/' + me.nick).set(true);
                     }
@@ -312,6 +160,48 @@
             }
         });
     }
+
+    function loadGames() {
+        db.ref('games').on('value', s => {
+            const l = document.getElementById('games-list'); l.innerHTML = "";
+            if(s.val()) Object.entries(s.val()).reverse().forEach(([id, g]) => {
+                const card = document.createElement('div'); card.className = 'card';
+                card.innerHTML = `<b>${g.title}</b><br><small>Автор: ${g.author || 'Анон'}</small>
+                <button class="btn" style="background:#4CAF50;color:#fff" onclick="window.open('${g.url}')">ИГРАТЬ</button>
+                <div style="margin-top:5px; border-top:1px solid #333">
+                <input id="ri-${id}" placeholder="Отзыв..." style="font-size:12px"><button class="btn" style="padding:5px" onclick="addR('${id}')">ОК</button></div>`;
+                l.appendChild(card);
+            });
+        });
+    }
+
+    function addR(id) { 
+        const inp = document.getElementById('ri-'+id);
+        if(inp.value.trim()) {
+            db.ref('games/'+id+'/reviews').push({user:me.nick, text:inp.value});
+            inp.value = "";
+        }
+    }
+
+    function renderAdd() {
+        const c = document.getElementById('add-content');
+        if(me.verified || me.vip) c.innerHTML = `<div class="card"><input id="gt" placeholder="Название"><input id="gl" placeholder="Ссылка"><button class="btn" onclick="send()">ОТПРАВИТЬ</button></div>`;
+        else c.innerHTML = `<div class="card">Только проверенные пользователи могут публиковать игры.</div>`;
+    }
+
+    function send() {
+        const t = document.getElementById('gt').value; const l = document.getElementById('gl').value;
+        if(t && l) db.ref('games').push({title:t, url:l, author:me.nick}).then(() => { alert("Опубликовано!"); document.getElementById('gt').value=""; document.getElementById('gl').value=""; });
+    }
+
+    function tab(id, el) { 
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); 
+        document.getElementById('p-' + id).classList.add('active'); 
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        if(el) el.classList.add('active');
+    }
+
+    function renderProfile() { document.getElementById('profile-info').innerHTML = `<h3>${me.nick}</h3><p style="color:var(--main)">ID: ${myDeviceID}</p>`; }
 </script>
 </body>
 </html>

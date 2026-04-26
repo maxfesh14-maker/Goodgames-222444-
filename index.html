@@ -3,195 +3,151 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GOOD GAMES PORTAL V2.0</title>
+    <title>GOOD GAMES PORTAL V2.5</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-    
     <style>
         :root { --main: #FBC02D; --bg: #0b0b0b; --card: #151515; --text: #fff; }
         body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; }
-
-        /* ЭКРАН ТЕХРАБОТ */
-        #m-screen {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #000; z-index: 999999; display: none;
-            flex-direction: column; justify-content: center; align-items: center; text-align: center;
-        }
-
+        #m-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 999999; display: none; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
         header { background: #111; padding: 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--main); }
         .container { max-width: 1000px; margin: 20px auto; padding: 0 15px; }
-        
-        /* КАРТОЧКИ ИГР */
-        .game-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; }
-        .game-card { background: var(--card); border-radius: 15px; overflow: hidden; transition: 0.3s; border: 1px solid #222; position: relative; }
-        .game-card:hover { transform: translateY(-10px); border-color: var(--main); }
+        .game-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
+        .game-card { background: var(--card); border-radius: 15px; overflow: hidden; border: 1px solid #222; transition: 0.3s; }
+        .game-card:hover { border-color: var(--main); transform: translateY(-5px); }
         .game-img { width: 100%; height: 150px; background: #333; object-fit: cover; }
         .game-info { padding: 15px; }
-        
-        /* КНОПКИ */
-        .btn { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; text-decoration: none; display: inline-block; }
-        .btn-main { background: var(--main); color: #000; }
-        .btn-main:hover { opacity: 0.8; }
-
-        /* МОДАЛЬНЫЕ ОКНА */
+        .btn { padding: 10px 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; text-decoration: none; display: inline-block; text-align: center; }
+        .btn-main { background: var(--main); color: #000; width: 100%; box-sizing: border-box; }
+        .btn-rev { background: #222; color: #888; width: 100%; margin-top: 5px; box-sizing: border-box; font-size: 12px; }
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: none; justify-content: center; align-items: center; z-index: 1000; }
-        .modal-content { background: #111; padding: 30px; border-radius: 20px; width: 350px; border: 1px solid var(--main); }
-        
+        .modal-content { background: #111; padding: 25px; border-radius: 20px; width: 380px; border: 1px solid var(--main); max-height: 80vh; overflow-y: auto; }
         input, textarea { width: 100%; padding: 12px; margin: 10px 0; background: #222; border: 1px solid #333; color: #fff; border-radius: 8px; box-sizing: border-box; }
-        .badge { background: var(--main); color: #000; font-size: 10px; padding: 2px 6px; border-radius: 4px; margin-left: 5px; }
+        .rev-item { background: #1a1a1a; padding: 10px; border-radius: 10px; margin-bottom: 10px; border-left: 3px solid var(--main); }
     </style>
 </head>
 <body>
 
-<div id="m-screen">
-    <h1 style="font-size: 60px; color: var(--main); margin: 0;">🚧</h1>
-    <h2 style="text-transform: uppercase; letter-spacing: 5px;">Техработы</h2>
-    <p id="m-reason" style="color: #666; max-width: 400px;"></p>
-    <div style="margin-top: 20px; font-size: 10px; color: #333;">POWERED BY TITAN SYSTEM</div>
-</div>
+<div id="m-screen"><h1>🚧</h1><h2>Техработы</h2><p id="m-reason"></p></div>
 
 <header>
     <div style="font-size: 24px; font-weight: bold; color: var(--main);">GOOD GAMES</div>
-    <div id="auth-zone">
-        <button class="btn btn-main" onclick="openModal('login-modal')">ВОЙТИ</button>
-    </div>
+    <div id="auth-zone"><button class="btn btn-main" onclick="openM('auth-modal')">ВОЙТИ</button></div>
 </header>
 
 <div class="container">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <h2>Популярные игры</h2>
-        <button class="btn btn-main" id="publish-btn" onclick="openModal('game-modal')" style="display:none;">ОПУБЛИКОВАТЬ ИГРУ</button>
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h2>Витрина игр</h2>
+        <button id="pub-btn" class="btn btn-main" style="display:none; width:auto;" onclick="openM('pub-modal')">ОПУБЛИКОВАТЬ</button>
     </div>
-    
-    <div id="game-list" class="game-grid">
-        </div>
+    <div id="game-list" class="game-grid"></div>
 </div>
 
-<div id="login-modal" class="modal">
+<div id="rev-modal" class="modal">
     <div class="modal-content">
-        <h2 style="margin-top:0">Вход</h2>
-        <input type="text" id="login-nick" placeholder="Никнейм">
-        <input type="password" id="login-pass" placeholder="Пароль">
-        <button class="btn btn-main" style="width:100%" onclick="login()">ВОЙТИ</button>
-        <button class="btn" style="width:100%; color:#555; margin-top:10px;" onclick="register()">СОЗДАТЬ АККАУНТ</button>
-        <button class="btn" style="width:100%; color:#555" onclick="closeModal()">ОТМЕНА</button>
+        <h3 id="rev-title" style="color:var(--main)">Отзывы</h3>
+        <div id="rev-container" style="margin-bottom:15px;"></div>
+        <div id="rev-input-zone" style="display:none;">
+            <textarea id="rev-text" placeholder="Напиши свой отзыв..."></textarea>
+            <button class="btn btn-main" onclick="sendReview()">ОТПРАВИТЬ</button>
+        </div>
+        <button class="btn btn-rev" onclick="closeM()">ЗАКРЫТЬ</button>
     </div>
 </div>
 
-<div id="game-modal" class="modal">
+<div id="auth-modal" class="modal">
+    <div class="modal-content">
+        <h2>Вход</h2>
+        <input id="u-nick" placeholder="Ник"><input type="password" id="u-pass" placeholder="Пароль">
+        <button class="btn btn-main" onclick="login()">ВОЙТИ</button>
+        <button class="btn btn-rev" onclick="register()">РЕГИСТРАЦИЯ</button>
+        <button class="btn btn-rev" onclick="closeM()">ОТМЕНА</button>
+    </div>
+</div>
+
+<div id="pub-modal" class="modal">
     <div class="modal-content">
         <h2>Новая игра</h2>
-        <input type="text" id="g-title" placeholder="Название игры">
-        <input type="text" id="g-link" placeholder="Ссылка на игру (URL)">
-        <input type="text" id="g-img" placeholder="Ссылка на иконку (картинку)">
-        <button class="btn btn-main" style="width:100%" onclick="publishGame()">ОПУБЛИКОВАТЬ</button>
-        <button class="btn" style="width:100%; color:#555; margin-top:10px;" onclick="closeModal()">ЗАКРЫТЬ</button>
+        <input id="g-t" placeholder="Название"><input id="g-l" placeholder="Ссылка (URL)"><input id="g-i" placeholder="Ссылка на иконку">
+        <button class="btn btn-main" onclick="publish()">ОПУБЛИКОВАТЬ</button>
+        <button class="btn btn-rev" onclick="closeM()">ОТМЕНА</button>
     </div>
 </div>
 
 <script>
-    // КОНФИГУРАЦИЯ БАЗЫ
-    const firebaseConfig = { 
-        apiKey: "AIzaSyCD1HEwz_NsJDasETxc6X4IdCJ6_WFj-LA", 
-        databaseURL: "https://goodgames-222444-default-rtdb.firebaseio.com" 
-    };
+    const firebaseConfig = { apiKey: "AIzaSyCD1HEwz_NsJDasETxc6X4IdCJ6_WFj-LA", databaseURL: "https://goodgames-222444-default-rtdb.firebaseio.com" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    let currentUser = null;
+    let user = null, currentG = null;
 
-    // --- ПРОВЕРКА ТЕХРАБОТ ---
     db.ref('maintenance').on('value', s => {
-        const m = s.val() || { status: false, reason: "" };
-        const screen = document.getElementById('m-screen');
-        if(m.status) {
-            screen.style.display = 'flex';
-            document.getElementById('m-reason').innerText = m.reason || "Ведутся работы по улучшению портала.";
-        } else {
-            screen.style.display = 'none';
-        }
+        const m = s.val() || {};
+        document.getElementById('m-screen').style.display = m.status ? 'flex' : 'none';
+        document.getElementById('m-reason').innerText = m.reason || "";
     });
 
-    // --- СИСТЕМА АККАУНТОВ ---
-    function register() {
-        const n = document.getElementById('login-nick').value.trim();
-        const p = document.getElementById('login-pass').value.trim();
-        if(!n || !p) return alert("Заполни поля!");
-        
-        db.ref('users/'+n).once('value', s => {
-            if(s.exists()) alert("Ник занят!");
-            else {
-                db.ref('users/'+n).set({ pass: p, vip: false, verified: false, deviceID: navigator.userAgent.slice(0,15) });
-                alert("Аккаунт создан!");
-                login();
-            }
-        });
-    }
-
     function login() {
-        const n = document.getElementById('login-nick').value.trim();
-        const p = document.getElementById('login-pass').value.trim();
+        const n = document.getElementById('u-nick').value, p = document.getElementById('u-pass').value;
         db.ref('users/'+n).once('value', s => {
-            const u = s.val();
-            if(u && u.pass === p) {
-                if(u.ban) return alert("ВАШ АККАУНТ ЗАБАНЕН!");
-                currentUser = { nick: n, ...u };
-                updateUI();
-                closeModal();
-            } else { alert("Неверные данные!"); }
+            const d = s.val();
+            if(d && d.pass === p) {
+                if(d.ban) return alert("БАН!");
+                user = { nick: n, ...d };
+                document.getElementById('auth-zone').innerHTML = `<b>${n}</b>`;
+                if(user.verified || user.vip) document.getElementById('pub-btn').style.display = 'block';
+                closeM();
+            } else alert("Ошибка!");
         });
     }
 
-    function updateUI() {
-        const zone = document.getElementById('auth-zone');
-        zone.innerHTML = `<b>${currentUser.nick}</b> ${currentUser.verified?'<span class="badge">VERIFIED</span>':''} <button class="btn" onclick="location.reload()" style="color:#555">ВЫХОД</button>`;
-        // Публиковать могут только проверенные или VIP (как ты просил в админке)
-        if(currentUser.verified || currentUser.vip) {
-            document.getElementById('publish-btn').style.display = 'block';
-        }
+    function register() {
+        const n = document.getElementById('u-nick').value, p = document.getElementById('u-pass').value;
+        db.ref('users/'+n).set({ pass: p, vip: false, verified: false }).then(() => alert("Создано!"));
     }
 
-    // --- РАБОТА С ИГРАМИ ---
-    function publishGame() {
-        const title = document.getElementById('g-title').value;
-        const link = document.getElementById('g-link').value;
-        const img = document.getElementById('g-img').value || 'https://via.placeholder.com/200x150';
-        
-        if(!title || !link) return alert("Заполни данные игры!");
-        
-        db.ref('games').push({
-            title: title,
-            link: link,
-            img: img,
-            author: currentUser.nick
-        });
-        alert("Игра отправлена на портал!");
-        closeModal();
+    function publish() {
+        const t = document.getElementById('g-t').value, l = document.getElementById('g-l').value, i = document.getElementById('g-i').value;
+        db.ref('games').push({ title: t, link: l, img: i, author: user.nick });
+        closeM();
     }
 
     db.ref('games').on('value', s => {
-        const list = document.getElementById('game-list');
-        list.innerHTML = "";
-        const games = s.val();
-        if(games) {
-            Object.values(games).reverse().forEach(g => {
-                list.innerHTML += `
-                    <div class="game-card">
-                        <img src="${g.img}" class="game-img" onerror="this.src='https://via.placeholder.com/200x150?text=No+Image'">
-                        <div class="game-info">
-                            <div style="font-weight:bold; margin-bottom:5px;">${g.title}</div>
-                            <div style="font-size:12px; color:#666; margin-bottom:10px;">Автор: ${g.author}</div>
-                            <a href="${g.link}" target="_blank" class="btn btn-main" style="width:100%; text-align:center; box-sizing:border-box;">ИГРАТЬ</a>
-                        </div>
-                    </div>
-                `;
-            });
-        }
+        const list = document.getElementById('game-list'); list.innerHTML = "";
+        if(s.val()) Object.entries(s.val()).forEach(([id, g]) => {
+            list.innerHTML += `<div class="game-card">
+                <img src="${g.img}" class="game-img">
+                <div class="game-info">
+                    <b>${g.title}</b><br><small>Автор: ${g.author}</small>
+                    <a href="${g.link}" target="_blank" class="btn btn-main" style="margin-top:10px;">ИГРАТЬ</a>
+                    <button class="btn btn-rev" onclick="openReviews('${id}', '${g.title}')">ОТЗЫВЫ</button>
+                </div>
+            </div>`;
+        });
     });
 
-    // --- ВСПОМОГАТЕЛЬНОЕ ---
-    function openModal(id) { document.getElementById(id).style.display = 'flex'; }
-    function closeModal() { document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'); }
+    function openReviews(id, title) {
+        currentG = id;
+        document.getElementById('rev-title').innerText = title;
+        document.getElementById('rev-input-zone').style.display = user ? 'block' : 'none';
+        db.ref('reviews').orderByChild('gameID').equalTo(id).on('value', s => {
+            const cont = document.getElementById('rev-container'); cont.innerHTML = "";
+            if(s.val()) Object.values(s.val()).forEach(r => {
+                cont.innerHTML += `<div class="rev-item"><b>${r.author}:</b><br>${r.text}</div>`;
+            }); else cont.innerHTML = "Отзывов нет.";
+        });
+        openM('rev-modal');
+    }
+
+    function sendReview() {
+        const txt = document.getElementById('rev-text').value;
+        if(!txt) return;
+        db.ref('reviews').push({ gameID: currentG, author: user.nick, text: txt });
+        document.getElementById('rev-text').value = "";
+    }
+
+    function openM(id) { document.getElementById(id).style.display = 'flex'; }
+    function closeM() { document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'); }
 </script>
 </body>
 </html>

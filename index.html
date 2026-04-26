@@ -3,95 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GOOD GAMES PORTAL V2.6</title>
+    <title>GOOD GAMES - FIXED</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
-        :root { --main: #FBC02D; --bg: #0b0b0b; --card: #151515; --text: #fff; }
+        :root { --main: #FBC02D; --bg: #0a0a0a; --card: #161616; --text: #ffffff; }
         body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; }
-        
-        /* Экран техработ */
-        #m-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 999999; display: none; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
-        
-        header { background: #111; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--main); }
+        header { background: #111; padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--main); }
         .container { max-width: 1000px; margin: 20px auto; padding: 0 15px; }
-        
-        .game-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
-        .game-card { background: var(--card); border-radius: 15px; overflow: hidden; border: 1px solid #222; transition: 0.3s; }
-        .game-img { width: 100%; height: 150px; background: #333; object-fit: cover; border-bottom: 1px solid #222; }
-        .game-info { padding: 15px; }
-
-        /* Кнопки */
-        .btn { padding: 12px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; transition: 0.2s; text-decoration: none; display: inline-block; text-align: center; font-size: 13px; }
-        .btn-main { background: var(--main); color: #000; width: 100%; box-sizing: border-box; }
-        .btn-main:hover { background: #fff; }
-        .btn-rev { background: #222; color: #888; width: 100%; margin-top: 8px; box-sizing: border-box; }
-        .btn-rev:hover { color: #fff; background: #333; }
-
-        /* Модальные окна */
-        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: none; justify-content: center; align-items: center; z-index: 1000; backdrop-filter: blur(5px); }
-        .modal-content { background: #111; padding: 30px; border-radius: 20px; width: 350px; border: 1px solid var(--main); position: relative; }
-        
-        input, textarea { width: 100%; padding: 14px; margin: 8px 0; background: #1a1a1a; border: 1px solid #333; color: #fff; border-radius: 10px; box-sizing: border-box; font-size: 14px; }
-        input:focus { border-color: var(--main); outline: none; }
-        
-        .rev-item { background: #1a1a1a; padding: 10px; border-radius: 10px; margin-bottom: 10px; border-left: 3px solid var(--main); font-size: 14px; }
-        .badge { background: var(--main); color: #000; font-size: 10px; padding: 2px 6px; border-radius: 4px; margin-left: 5px; text-transform: uppercase; }
+        .btn { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; background: var(--main); color: #000; }
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: none; justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: #111; padding: 30px; border-radius: 20px; width: 320px; border: 1px solid var(--main); }
+        input { width: 100%; padding: 12px; margin: 10px 0; background: #222; border: 1px solid #333; color: #fff; border-radius: 8px; box-sizing: border-box; }
+        .game-card { background: var(--card); padding: 15px; border-radius: 15px; border: 1px solid #222; margin-bottom: 10px; }
     </style>
 </head>
 <body>
 
-<div id="m-screen"><h1>🚧</h1><h2>ТЕХНИЧЕСКИЕ РАБОТЫ</h2><p id="m-reason"></p></div>
-
 <header>
-    <div style="font-size: 22px; font-weight: 900; color: var(--main); letter-spacing: 1px;">GOOD GAMES</div>
-    <div id="auth-zone">
-        <button class="btn btn-main" style="width: auto; padding: 8px 20px;" onclick="openM('auth-modal')">ВОЙТИ / РЕГИСТРАЦИЯ</button>
-    </div>
+    <div style="font-weight: 900; color: var(--main);">GOOD GAMES</div>
+    <div id="user-nav"><button class="btn" onclick="openM()">Войти / Регистрация</button></div>
 </header>
 
 <div class="container">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
-        <h2 style="margin:0">Игры портала</h2>
-        <button id="pub-btn" class="btn btn-main" style="display:none; width:auto;" onclick="openM('pub-modal')">+ Опубликовать</button>
-    </div>
-    <div id="game-list" class="game-grid"></div>
-</div>
-
-<div id="rev-modal" class="modal">
-    <div class="modal-content">
-        <h3 id="rev-title" style="color:var(--main); margin-top:0;">Отзывы</h3>
-        <div id="rev-container" style="max-height: 250px; overflow-y: auto; margin-bottom:15px; padding-right: 5px;"></div>
-        <div id="rev-input-zone" style="display:none;">
-            <textarea id="rev-text" placeholder="Ваш отзыв..." rows="3"></textarea>
-            <button class="btn btn-main" onclick="sendReview()">ОТПРАВИТЬ</button>
-        </div>
-        <button class="btn btn-rev" onclick="closeM()">ЗАКРЫТЬ</button>
-    </div>
+    <div id="game-list"></div>
 </div>
 
 <div id="auth-modal" class="modal">
     <div class="modal-content">
-        <h2 id="auth-header" style="margin-top:0">Вход в аккаунт</h2>
-        <input id="u-nick" type="text" placeholder="Ваш ник">
-        <input id="u-pass" type="password" placeholder="Ваш пароль">
-        <div id="auth-error" style="color: #ff4444; font-size: 12px; margin-bottom: 5px; text-align: center;"></div>
-        
-        <button class="btn btn-main" onclick="handleLogin()">ВОЙТИ</button>
-        <div style="text-align:center; margin: 15px 0; color: #555; font-size: 12px;">ИЛИ</div>
-        <button class="btn btn-rev" style="color: var(--main); border-color: var(--main);" onclick="handleRegister()">СОЗДАТЬ НОВЫЙ АККАУНТ</button>
-        <button class="btn btn-rev" onclick="closeM()">ОТМЕНА</button>
-    </div>
-</div>
-
-<div id="pub-modal" class="modal">
-    <div class="modal-content">
-        <h2>Публикация игры</h2>
-        <input id="g-t" placeholder="Название игры">
-        <input id="g-l" placeholder="Ссылка на игру (URL)">
-        <input id="g-i" placeholder="Ссылка на иконку (URL)">
-        <button class="btn btn-main" onclick="publish()">ОПУБЛИКОВАТЬ</button>
-        <button class="btn btn-rev" onclick="closeM()">ОТМЕНА</button>
+        <h2 style="margin:0">Аккаунт</h2>
+        <input id="u-n" placeholder="Ник (Максим)">
+        <input id="u-p" type="password" placeholder="Пароль">
+        <button class="btn" style="width:100%" onclick="doLogin()">ВОЙТИ</button>
+        <button class="btn" style="width:100%; margin-top:10px; background:#222; color:#fff" onclick="doReg()">РЕГИСТРАЦИЯ</button>
+        <button class="btn" style="width:100%; margin-top:10px; background:none; color:#555" onclick="closeM()">ОТМЕНА</button>
     </div>
 </div>
 
@@ -103,111 +48,41 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    let user = null, currentG = null;
+    function doLogin() {
+        const n = document.getElementById('u-n').value.trim();
+        const p = document.getElementById('u-p').value.trim();
+        if(!n || !p) return alert("Введите данные!");
 
-    // Проверка техработ
-    db.ref('maintenance').on('value', s => {
-        const m = s.val() || {};
-        document.getElementById('m-screen').style.display = m.status ? 'flex' : 'none';
-        document.getElementById('m-reason').innerText = m.reason || "";
-    });
-
-    // --- ЛОГИКА АВТОРИЗАЦИИ (ИСПРАВЛЕНО) ---
-    function handleLogin() {
-        const n = document.getElementById('u-nick').value.trim();
-        const p = document.getElementById('u-pass').value.trim();
-        const err = document.getElementById('auth-error');
-        if(!n || !p) return err.innerText = "Заполните все поля!";
-
-        db.ref('users/' + n).once('value', s => {
-            const d = s.val();
-            if (d && d.pass === p) {
-                if(d.ban) return err.innerText = "ВАШ АККАУНТ ЗАБАНЕН!";
-                user = { nick: n, ...d };
-                loginSuccess();
-            } else {
-                err.innerText = "Неверный ник или пароль!";
-            }
-        });
-    }
-
-    function handleRegister() {
-        const n = document.getElementById('u-nick').value.trim();
-        const p = document.getElementById('u-pass').value.trim();
-        const err = document.getElementById('auth-error');
-        if(!n || !p) return err.innerText = "Придумайте ник и пароль!";
-        if(n.length < 3) return err.innerText = "Ник слишком короткий!";
-
-        db.ref('users/' + n).once('value', s => {
-            if (s.exists()) {
-                err.innerText = "Этот ник уже занят! Выберите другой.";
-            } else {
-                db.ref('users/' + n).set({
-                    pass: p,
-                    vip: false,
-                    verified: false,
-                    deviceID: navigator.userAgent.slice(0, 20)
-                }).then(() => {
-                    alert("Аккаунт успешно создан! Теперь войдите.");
-                    err.innerText = "Аккаунт создан. Нажмите ВОЙТИ.";
-                    err.style.color = "#4CAF50";
-                });
-            }
-        });
-    }
-
-    function loginSuccess() {
-        const zone = document.getElementById('auth-zone');
-        zone.innerHTML = `<span style="font-weight:bold;">${user.nick}</span> ${user.verified ? '<span class="badge">V</span>' : ''} <button class="btn" style="width:auto; padding:5px; margin-left:10px; background:none; color:#555;" onclick="location.reload()">Выйти</button>`;
-        if(user.verified || user.vip) document.getElementById('pub-btn').style.display = 'block';
-        closeM();
-    }
-
-    // --- ИГРЫ И ОТЗЫВЫ ---
-    function publish() {
-        const t = document.getElementById('g-t').value, l = document.getElementById('g-l').value, i = document.getElementById('g-i').value;
-        if(!t || !l) return alert("Укажите название и ссылку!");
-        db.ref('games').push({ title: t, link: l, img: i || 'https://via.placeholder.com/300x150', author: user.nick });
-        closeM();
-    }
-
-    db.ref('games').on('value', s => {
-        const list = document.getElementById('game-list'); list.innerHTML = "";
-        if(s.val()) Object.entries(s.val()).reverse().forEach(([id, g]) => {
-            list.innerHTML += `<div class="game-card">
-                <img src="${g.img}" class="game-img" onerror="this.src='https://via.placeholder.com/300x150?text=GAME'">
-                <div class="game-info">
-                    <b style="font-size:16px;">${g.title}</b><br><small style="color:#666">Автор: ${g.author}</small>
-                    <a href="${g.link}" target="_blank" class="btn btn-main" style="margin-top:15px;">ИГРАТЬ</a>
-                    <button class="btn btn-rev" onclick="openReviews('${id}', '${g.title}')">ОТЗЫВЫ</button>
-                </div>
-            </div>`;
-        });
-    });
-
-    function openReviews(id, title) {
-        currentG = id;
-        document.getElementById('rev-title').innerText = title;
-        document.getElementById('rev-input-zone').style.display = user ? 'block' : 'none';
-        db.ref('reviews').orderByChild('gameID').equalTo(id).on('value', s => {
-            const cont = document.getElementById('rev-container'); cont.innerHTML = "";
+        // Самая простая и надежная проверка
+        db.ref('users/' + n).once('value').then(s => {
             const data = s.val();
-            if(data) Object.values(data).reverse().forEach(r => {
-                cont.innerHTML += `<div class="rev-item"><b>${r.author}:</b> ${r.text}</div>`;
-            }); else cont.innerHTML = "<p style='color:#444; text-align:center;'>Отзывов пока нет.</p>";
-        });
-        openM('rev-modal');
+            console.log("Вход для:", n, "Данные в базе:", data);
+
+            if(data && data.pass == p) {
+                if(data.ban) return alert("Аккаунт заблокирован!");
+                alert("Успешный вход!");
+                document.getElementById('user-nav').innerHTML = `<b>${n}</b>`;
+                closeM();
+            } else {
+                alert("Неверный ник или пароль!");
+            }
+        }).catch(e => alert("Ошибка базы: " + e.message));
     }
 
-    function sendReview() {
-        const txt = document.getElementById('rev-text').value.trim();
-        if(!txt) return;
-        db.ref('reviews').push({ gameID: currentG, author: user.nick, text: txt });
-        document.getElementById('rev-text').value = "";
+    function doReg() {
+        const n = document.getElementById('u-n').value.trim();
+        const p = document.getElementById('u-p').value.trim();
+        if(!n || !p) return alert("Заполни всё!");
+
+        db.ref('users/' + n).set({
+            pass: p,
+            vip: false,
+            verified: false
+        }).then(() => alert("Регистрация прошла! Теперь жми войти."));
     }
 
-    function openM(id) { document.getElementById(id).style.display = 'flex'; document.getElementById('auth-error').innerText = ""; }
-    function closeM() { document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'); }
+    function openM() { document.getElementById('auth-modal').style.display = 'flex'; }
+    function closeM() { document.getElementById('auth-modal').style.display = 'none'; }
 </script>
 </body>
 </html>

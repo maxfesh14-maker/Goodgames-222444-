@@ -3,12 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Технические работы | GoodGames</title>
+    <title>GoodGames | Технические работы</title>
     <style>
+        /* Основные цвета: Чёрный (#000000) и Жёлтый (#ffcc00) */
         body {
             margin: 0;
             padding: 0;
-            background-color: #0d0d0d;
+            background-color: #000000;
             color: #ffffff;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             display: flex;
@@ -18,93 +19,106 @@
             overflow: hidden;
         }
 
-        .maintenance-card {
-            background: linear-gradient(145deg, #1a1a1a, #111111);
-            padding: 60px 40px;
-            border-radius: 35px;
-            border: 2px solid #00ff88;
-            box-shadow: 0 0 50px rgba(0, 255, 136, 0.15);
+        .main-container {
+            background: #111111;
+            padding: 50px 30px;
+            border-radius: 20px;
+            border: 4px solid #ffcc00; /* Жёлтая рамка */
+            box-shadow: 0 0 40px rgba(255, 204, 0, 0.2);
             text-align: center;
             max-width: 500px;
             width: 90%;
-            animation: breathe 4s infinite ease-in-out;
+            position: relative;
         }
 
-        .icon {
-            font-size: 65px;
-            margin-bottom: 25px;
-            display: inline-block;
-            animation: spin 5s linear infinite;
+        /* Декоративные полоски сверху и снизу в стиле ленты ограждения */
+        .tape {
+            height: 15px;
+            background: repeating-linear-gradient(
+                -45deg,
+                #ffcc00,
+                #ffcc00 10px,
+                #000000 10px,
+                #000000 20px
+            );
+            width: 100%;
+            position: absolute;
+            left: 0;
         }
+
+        .tape-top { top: 0; border-top-left-radius: 15px; border-top-right-radius: 15px; }
+        .tape-bottom { bottom: 0; border-bottom-left-radius: 15px; border-bottom-right-radius: 15px; }
 
         .logo {
-            font-size: 3.5em;
+            font-size: 3.2em;
             font-weight: 900;
-            color: #00ff88;
-            margin: 0;
-            letter-spacing: -2px;
+            color: #ffcc00; /* Жёлтый логотип */
+            margin: 20px 0 10px 0;
             text-transform: uppercase;
+            letter-spacing: -1px;
         }
 
-        .badge {
+        .icon-gear {
+            font-size: 60px;
+            margin-top: 10px;
             display: inline-block;
-            background: rgba(0, 255, 136, 0.1);
-            color: #00ff88;
-            padding: 6px 18px;
-            border-radius: 20px;
-            font-size: 0.8em;
-            font-weight: bold;
-            margin: 15px 0 30px 0;
-            border: 1px solid rgba(0, 255, 136, 0.3);
-            text-transform: uppercase;
+            animation: rotate-gear 6s linear infinite;
         }
 
         h1 {
-            font-size: 1.6em;
+            font-size: 1.8em;
             margin-bottom: 20px;
-            color: #ffffff;
+            color: #ffcc00;
         }
 
-        .description {
+        .message-text {
             font-size: 1.1em;
             line-height: 1.6;
-            color: #bbbbbb;
-            margin-bottom: 20px;
+            color: #eeeeee;
         }
 
         .highlight {
-            color: #00ff88;
-            font-weight: 600;
+            color: #ffcc00;
+            font-weight: bold;
+            text-decoration: underline;
         }
 
-        @keyframes spin {
+        @keyframes rotate-gear {
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
         }
 
-        @keyframes breathe {
-            0%, 100% { transform: scale(1); box-shadow: 0 0 40px rgba(0, 255, 136, 0.1); }
-            50% { transform: scale(1.02); box-shadow: 0 0 60px rgba(0, 255, 136, 0.25); }
+        /* Пульсация всей карточки */
+        .pulse {
+            animation: pulse-border 3s infinite ease-in-out;
+        }
+
+        @keyframes pulse-border {
+            0%, 100% { border-color: #ffcc00; box-shadow: 0 0 20px rgba(255, 204, 0, 0.1); }
+            50% { border-color: #ffe066; box-shadow: 0 0 50px rgba(255, 204, 0, 0.4); }
         }
     </style>
 </head>
 <body>
 
-    <div class="maintenance-card">
-        <div class="icon">⚙️</div>
+    <div class="main-container pulse">
+        <div class="tape tape-top"></div>
+        
+        <div class="icon-gear">⚙️</div>
         <p class="logo">GoodGames</p>
-        <div class="badge">Обновление системы</div>
         
-        <h1>Режим входа временно недоступен</h1>
+        <h1>Обновление системы</h1>
         
-        <p class="description">
+        <p class="message-text">
             Приносим искренние извинения за <span class="highlight">предоставленные неудобства</span>. 
-            Мы проводим технические работы, чтобы сделать портал лучше и безопаснее.
+            В данный момент мы перенастраиваем режим входа для стабильной работы портала.
         </p>
 
-        <p class="description">
-            Пожалуйста, подождите немного. Скоро мы снова будем в строю!
+        <p class="message-text">
+            Совсем скоро всё будет готово. Спасибо за ваше терпение!
         </p>
+
+        <div class="tape tape-bottom"></div>
     </div>
 
 </body>

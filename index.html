@@ -4,28 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GOOD GAMES PORTAL</title>
-    
-    <!-- FIREBASE ПОДКЛЮЧАЕТСЯ В ГОЛОВЕ (<head>) -->
+    <!-- Подключение Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-    <script>
-        // Инициализация базы данных происходит до загрузки интерфейса
-        const config = { 
-            apiKey: "AIzaSyCD1HEwz_NsJDasETxc6X4IdCJ6_WFj-LA",
-            databaseURL: "https://goodgames-222444-default-rtdb.firebaseio.com",
-            projectId: "goodgames-222444"
-        };
-        firebase.initializeApp(config);
-        const db = firebase.database();
-        let user = null, curG = null;
-    </script>
-
     <style>
         :root { --main: #FBC02D; --bg: #080808; --card: #121212; --text: #fff; }
         body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; overflow-x: hidden; }
         
+        /* Экран техработ */
         #m-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 9999; display: none; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
         
+        /* Шапка с ссылкой на портал */
         header { background: #111; padding: 15px 5%; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--main); box-shadow: 0 4px 20px rgba(0,0,0,0.6); }
         .logo { font-size: 26px; font-weight: 900; color: var(--main); letter-spacing: 2px; text-decoration: none; }
         .header-links { display: flex; align-items: center; gap: 20px; }
@@ -34,18 +23,21 @@
         
         .container { max-width: 1200px; margin: 30px auto; padding: 0 20px; }
         
+        /* МАСШТАБ СЕТКИ (Крупные карточки) */
         .game-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 30px; }
         .game-card { background: var(--card); border-radius: 20px; overflow: hidden; border: 1px solid #222; transition: 0.3s; }
         .game-card:hover { transform: translateY(-8px); border-color: var(--main); box-shadow: 0 10px 30px rgba(251, 192, 45, 0.1); }
         .game-img { width: 100%; height: 200px; object-fit: cover; background: #1a1a1a; border-bottom: 1px solid #222; }
         .game-info { padding: 20px; text-align: center; }
 
+        /* Кнопки */
         .btn { padding: 12px 20px; border: none; border-radius: 12px; cursor: pointer; font-weight: bold; transition: 0.2s; width: 100%; box-sizing: border-box; margin-top: 10px; }
         .btn-main { background: var(--main); color: #000; }
         .btn-main:active { transform: scale(0.95); }
         .btn-rev { background: transparent; border: 1px solid #333; color: #888; }
         .btn-link { background: none; color: var(--main); border: none; cursor: pointer; text-decoration: underline; margin-top: 15px; font-size: 14px; }
 
+        /* Модальные окна */
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: none; justify-content: center; align-items: center; z-index: 1000; backdrop-filter: blur(4px); }
         .modal-content { background: #111; padding: 30px; border-radius: 25px; width: 350px; border: 1px solid var(--main); text-align: center; }
         input, textarea { width: 100%; padding: 14px; margin: 10px 0; background: #1a1a1a; border: 1px solid #333; color: #fff; border-radius: 10px; box-sizing: border-box; }
@@ -56,6 +48,7 @@
 </head>
 <body>
 
+<!-- Экран техработ -->
 <div id="m-screen">
     <h1 style="font-size: 60px;">🚧</h1>
     <h2 style="color: var(--main);">ТЕХНИЧЕСКИЕ РАБОТЫ</h2>
@@ -79,10 +72,11 @@
     </div>
     
     <div id="game-list" class="game-grid">
-        <p style="color:#777">Загрузка игр...</p>
+        <!-- Сюда загружаются игры -->
     </div>
 </div>
 
+<!-- Окно Авторизации и Восстановления -->
 <div id="modal-auth" class="modal">
     <div class="modal-content">
         <h2 style="color:var(--main); margin-top:0">Аккаунт</h2>
@@ -97,6 +91,7 @@
     </div>
 </div>
 
+<!-- Окно Отзывов -->
 <div id="modal-rev" class="modal">
     <div class="modal-content">
         <h3 id="rev-game-name" style="color:var(--main); margin-top:0">Отзывы</h3>
@@ -109,6 +104,7 @@
     </div>
 </div>
 
+<!-- Окно Публикации -->
 <div id="modal-pub" class="modal">
     <div class="modal-content">
         <h2 style="color:var(--main)">Новая игра</h2>
@@ -120,16 +116,23 @@
     </div>
 </div>
 
-<!-- Логика интерфейса -->
 <script>
-    // Техработы
+    // КОНФИГУРАЦИЯ FIREBASE
+    const config = { 
+        databaseURL: "https://goodgames-222444-default-rtdb.firebaseio.com" 
+    };
+    firebase.initializeApp(config);
+    const db = firebase.database();
+    let user = null, curG = null;
+
+    // 1. Техработы
     db.ref('maintenance').on('value', s => {
         const m = s.val() || {};
         document.getElementById('m-screen').style.display = m.status ? 'flex' : 'none';
         document.getElementById('m-reason').innerText = m.reason || "Идет обновление...";
     });
 
-    // Загрузка игр
+    // 2. Загрузка игр
     db.ref('games').on('value', s => {
         const grid = document.getElementById('game-list'); grid.innerHTML = "";
         const data = s.val();
@@ -151,7 +154,7 @@
         }
     });
 
-    // Авторизация
+    // 3. Авторизация
     function auth() {
         const n = document.getElementById('u-n').value.trim();
         const p = document.getElementById('u-p').value.trim();
@@ -163,6 +166,7 @@
                 user = { nick: n, ...d };
                 document.getElementById('auth-zone').innerHTML = `<b>${n}</b>${d.verified ? '<span class="badge">V</span>' : ''}`;
                 
+                // Только верифицированные пользователи могут публиковать игры
                 if(d.verified) {
                     document.getElementById('add-btn').style.display = 'block';
                 }
@@ -171,7 +175,7 @@
         });
     }
 
-    // Регистрация
+    // 4. Регистрация
     function reg() {
         const n = document.getElementById('u-n').value.trim();
         const p = document.getElementById('u-p').value.trim();
@@ -183,12 +187,12 @@
             } else {
                 db.ref('users/' + n).set({ pass: p, verified: false, vip: false })
                     .then(() => alert("Успешно! Теперь нажмите ВОЙТИ."))
-                    .catch(e => alert("Ошибка базы данных: " + e.message));
+                    .catch(e => alert("Ошибка базы данных."));
             }
         });
     }
 
-    // Восстановление пароля
+    // 5. Восстановление пароля
     function recoverPass() {
         const n = prompt("Введите ваш никнейм для восстановления:");
         if(!n) return;
@@ -208,7 +212,7 @@
         });
     }
 
-    // Отзывы
+    // 6. Отзывы
     function openReviews(id, title) {
         curG = id;
         document.getElementById('rev-game-name').innerText = title;
@@ -234,7 +238,7 @@
         document.getElementById('rev-text').value = "";
     }
 
-    // Публикация
+    // 7. Публикация
     function publish() {
         if(!user || !user.verified) return alert("Только верифицированные пользователи могут добавлять игры.");
         
